@@ -12,7 +12,7 @@
 # define RKDB_SERVER_H_
 
 
-int start_dbserver(const char* serverip, int serverport, int connpoolsize);
+int dbserver_start(const char* serverip, int serverport, int connpoolsize);
 
 
 #endif /* !RKDB_SERVER_H_ */

@@ -18,6 +18,7 @@
 #define CHECK_HEADER(header) (header>>53==1210)
 #define MAKE_CALL_HEADER(callmode, callid, len) ((((unsigned long long)1210)<<53) | ((((unsigned long long)callmode)<<59)>>11) \
                 | (((unsigned long long)(unsigned short)callid)<<32) | ((unsigned long long)(unsigned int)len))
+#define MAKE_RESP_HEADER(result, percent, len) MAKE_CALL_HEADER(result, percent, len)
 				
 #define MAKE_CONV(clientip, clientport) (((clientip) & 0xFFFF0000) | ((clientport) & 0x0000FFFF))
 
@@ -27,6 +28,7 @@
 #define RKCP_CALLMODE_PUSH 3
 #define RKCP_CALLMODE_PULL 4
 
+#define RKCP_RESULT_OK 1
 
 #define RKCP_TIMEOUT_COUNT 30   //milliseconds
 

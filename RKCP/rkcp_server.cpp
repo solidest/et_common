@@ -49,7 +49,7 @@ void rkcps_start(int connPoolSize,int (*output)(const char *buf, int len, struct
         conn.callmode = 0;
         conn.data_len = 0;
         conn.recved_len = 0;
-        conn.conn_kcp = ikcp_create(0, &conn);
+        conn.conn_kcp = ikcp_create(0, 0);
         conn.conn_kcp->output = output;
     }
 }
@@ -114,7 +114,11 @@ void rkcps_close_conn(rkcpconn* rkcp)
     rkcp->recved_len = 0;
     reset_kcp(rkcp->conn_kcp);
     rkcp->conn_kcp->conv = 0;
-    rkcp->conn_kcp->output = NULL;
+    if(rkcp->conn_kcp->user) 
+    {
+        free(rkcp->conn_kcp->user);
+        rkcp->conn_kcp->user = NULL;
+    }
 
     POOL_LIST_ITEM * it = (POOL_LIST_ITEM*)rkcp;
     it->isBusy = false;

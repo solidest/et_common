@@ -6,7 +6,7 @@ MAIN_SRC := main.cpp
 
 
 # compile marcros
-DIRS := RKCP RKDB
+DIRS := RKCP RKLOG
 OBJS :=
 
 # intermedia compile marcros
@@ -14,7 +14,7 @@ OBJS :=
 ALL_OBJS := 
 CLEAN_FILES := $(TARGET) $(OBJS)
 DIST_CLEAN_FILES := $(OBJS)
-#LIB_REF := ./src/libs/lua/lua53.dll
+LIB_REF := $(BIN_PATH)/libuv.so
 
 # recursive wildcard
 rwildcard=$(foreach d,$(wildcard $(addsuffix *,$(1))),$(call rwildcard,$(d)/,$(2))$(filter $(subst *,%,$(2)),$(d)))
@@ -24,8 +24,8 @@ default: show-info all
 
 # non-phony targets
 $(TARGET): build-subdirs $(OBJS) find-all-objs
-	@echo -e "\tCC" $(CCFLAG) $(ALL_OBJS) $(MAIN_SRC) -o $@
-	@$(CC) $(CCFLAG) $(ALL_OBJS) $(MAIN_SRC) -o $@
+	@echo -e "\tCC" $(CCFLAG) $(ALL_OBJS) $(MAIN_SRC) $(LIB_REF) -o $@
+	@$(CC) $(CCFLAG) $(ALL_OBJS) $(MAIN_SRC) $(LIB_REF) -o $@
 
 # phony targets
 .PHONY: all
