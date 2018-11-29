@@ -8,6 +8,7 @@
 static uv_loop_t *loop;
 static uv_udp_t recv_socket;
 static uv_check_t update_kcp;
+static uv_udp_send_t send_req;
 
 static void udp_sv_send_cb(uv_udp_send_t* req, int status)
 {
@@ -16,7 +17,7 @@ static void udp_sv_send_cb(uv_udp_send_t* req, int status)
         printf("error1\n");
 	}
 
-	free(req);
+	//free(req);
 }
 
 //callback for kcp
@@ -24,9 +25,8 @@ static int udp_output(const char *buf, int len, ikcpcb *kcp, void *user)
 {
     if(user)
     {
-        uv_udp_send_t* req = (uv_udp_send_t*)malloc(sizeof(uv_udp_send_t));
         uv_buf_t re_buf = uv_buf_init((char *)buf, len);
-        uv_udp_send(req, &recv_socket, &re_buf, len, (struct sockaddr *)user, udp_sv_send_cb);        
+        uv_udp_send(&send_req, (const struct sockaddr_in*)user, &re_buf, len, (struct sockaddr *)user, udp_sv_send_cb);        
     }
     else
     {
