@@ -26,7 +26,7 @@ static int udp_output(const char *buf, int len, ikcpcb *kcp, void *user)
     if(user)
     {
         uv_buf_t re_buf = uv_buf_init((char *)buf, len);
-        uv_udp_send(&send_req, (const struct sockaddr_in*)user, &re_buf, len, (struct sockaddr *)user, udp_sv_send_cb);        
+        uv_udp_send(&send_req, &recv_socket, &re_buf, len, (struct sockaddr *)user, udp_sv_send_cb);        
     }
     else
     {
