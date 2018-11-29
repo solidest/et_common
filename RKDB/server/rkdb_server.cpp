@@ -3,8 +3,6 @@
 #include "rkdb_server.h"
 #include "..//..//RKCP//rkcp_server.h"
 
-
-
 static uv_loop_t *loop;
 static uv_udp_t recv_socket;
 static uv_check_t update_kcp;
