@@ -3,7 +3,10 @@
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/bin/**",
+                "${workspaceFolder}/libs/libuv/include/**"
+
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

@@ -13,6 +13,8 @@
 
 #define GET_RESULT(header) (((header) << 11) >> 59)
 #define GET_DATALEN(header) (0x00000000FFFFFFFF & header)
+#define GET_CALLMODE(header) GET_RESULT(header)
+#define GET_CALLID(header) (((header) << 16) >> 48)
 #define CHECK_HEADER(header) (header>>53==1210)
 #define MAKE_CALL_HEADER(callmode, callid, len) ((((unsigned long long)1210)<<53) | ((((unsigned long long)callmode)<<59)>>11) \
                 | (((unsigned long long)(unsigned short)callid)<<32) | ((unsigned long long)(unsigned int)len))

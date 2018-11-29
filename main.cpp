@@ -5,6 +5,7 @@
 
 #include "RKCP//rkcp_client.h"
 #include "RKCP//rkcp_server.h"
+#include "RKDB/server/rkdb_server.h"
 using namespace std;
  
 
@@ -23,14 +24,15 @@ int main(int argc, const char * argv[]) {
     assert(i==1);
     cout<<"pass1"<<endl;
 
-    const char* msg = "test message";
+    const char * msg = "test message";
     int res = rkcpc_call(i, 0, msg, strlen(msg));
     assert(res == RKCP_ERR_TIMEOUT);
+    rkcpc_close();
     cout<<"pass2"<<endl;
 
     //test server
     int size = 20;
-    rkcps_start(size);
+    rkcps_start(size, nullptr);
     auto conn = rkcps_open_conn(22222, 22222, get_now());
     assert(conn != nullptr);
     conn = rkcps_open_conn(11111, 11111, get_now());
@@ -57,10 +59,21 @@ int main(int argc, const char * argv[]) {
 
 
     //test connect
+    start_dbserver("192.168136.138", 8000, 10);
+    rkcpc_open(10);
+    const char * msg2 = "test message";
+    for(int i=0; i<10; i++)
+    {
+        int conn = rkcpc_getid("192.168136.138", 8000);
+        int ret = rkcpc_call(conn, 0, msg2, 7);
+        printf("result = %d\n", ret);
+        char buf[7];
+        ret = rkcpc_pcall(conn, 0, msg2, 7, buf, 7);
+        assert(ret == 7);
+        printf("result = %s\n", buf);
+    }
 
-    //start_udpserver();
-    // res = rkcpc_call(0, i,  msg, strlen(msg));
-    // assert(res == 1);
+
 
 
     rkcpc_close();

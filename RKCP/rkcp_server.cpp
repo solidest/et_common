@@ -28,7 +28,7 @@ static POOL_LIST_ITEM *pool = NULL;
 
 //initial client connection pool
 //connPoolSize : size of connection pool
-void rkcps_start(int connPoolSize)
+void rkcps_start(int connPoolSize,int (*output)(const char *buf, int len, struct IKCPCB *kcp, void *user))
 {
     pool_size = connPoolSize;
     pool = (LIST_ITEM*)malloc(sizeof(struct LIST_ITEM)*pool_size);
@@ -48,7 +48,9 @@ void rkcps_start(int connPoolSize)
         conn.call_id = 0;
         conn.callmode = 0;
         conn.data_len = 0;
+        conn.recved_len = 0;
         conn.conn_kcp = ikcp_create(0, &conn);
+        conn.conn_kcp->output = output;
     }
 }
 
@@ -75,8 +77,9 @@ rkcpconn * rkcps_open_conn(int clientip, int clientport, long long now_time)
     {
         if(it->out_time<now_time)
         {
+            auto bkit = it;
             it = it->next;
-            rkcps_close_conn(&it->conn);
+            rkcps_close_conn(&bkit->conn);
             continue;
         }
         else if(it->conn.conn_kcp->conv == conv)
@@ -108,6 +111,7 @@ void rkcps_close_conn(rkcpconn* rkcp)
     rkcp->call_id = 0;
     rkcp->callmode = 0;
     rkcp->data_len = 0;
+    rkcp->recved_len = 0;
     reset_kcp(rkcp->conn_kcp);
     rkcp->conn_kcp->conv = 0;
     rkcp->conn_kcp->output = NULL;
@@ -135,4 +139,28 @@ void rkcps_close_conn(rkcpconn* rkcp)
     pool_header.last->next = it;
     pool_header.last = it;
     return;
+}
+
+
+
+//update all alive kcp
+void rkcps_update(unsigned long long now_time)
+{
+    auto it = pool_header.first;
+    while(it->isBusy)
+    {
+        if(it->out_time<now_time)
+        {
+            auto bkit = it;
+            it = it->next;
+            rkcps_close_conn(&bkit->conn);
+            continue;
+        }
+        else
+        {
+            ikcp_update(it->conn.conn_kcp, now_time);
+            it = it->next;
+            if(it == pool_header.first) return;
+        }
+    }
 }
