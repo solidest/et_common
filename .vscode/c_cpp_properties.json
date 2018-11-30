@@ -4,9 +4,7 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${workspaceFolder}/bin/**",
-                "${workspaceFolder}/libs/libuv/include/**"
-
+                "${workspaceFolder}/bin/**"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

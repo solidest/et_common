@@ -1,8 +1,8 @@
 
 #include <string.h>
-#include "uv.h"
 #include "rklog_server.h"
 #include "..//..//RKCP//rkcp_server.h"
+#include "rkuv.h"
 
 static uv_loop_t *loop;
 static uv_udp_t recv_serv;
@@ -42,20 +42,23 @@ static int udp_output(const char *buf, int len, ikcpcb *kcp, void *user)
 //read userdata in kcp package
 static void on_read_kcpdata(rkcpconn& conn) 
 {
-    if(conn.recved_len<conn.data_len && ikcp_peeksize(conn.conn_kcp)>=conn.data_len)
+    switch(conn.callmode)
     {
-        char * buf = (char *)malloc(conn.data_len);
-        ikcp_recv(conn.conn_kcp, buf, conn.data_len);
-        unsigned long long header = MAKE_RESP_HEADER(RKCP_RESULT_OK, 0, conn.data_len);
-        ikcp_send(conn.conn_kcp, (char *)&header, 8);
-        ikcp_send(conn.conn_kcp, buf, conn.data_len);
-        conn.recved_len = conn.data_len;
+        case RKCP_CALLMODE_VOID:
+            if(conn.recved_len == 0 && ikcp_peeksize(conn.conn_kcp)>=conn.data_len)
+            {
+                char * buf = (char *)malloc(conn.data_len);
+                conn.recved_len = ikcp_recv(conn.conn_kcp, buf, conn.data_len);
+                rklog(buf);
+                unsigned long long header = MAKE_RESP_HEADER(RKCP_RESULT_OK, 0, conn.data_len);
+                ikcp_send(conn.conn_kcp, (char *)&header, 8);
+                free(buf);
+            }
+            if(conn.recved_len==conn.data_len && ikcp_waitsnd(conn.conn_kcp)==0)
+                rkcps_close_conn(&conn);
+            break;
     }
 
-    if(conn.recved_len>=conn.data_len && ikcp_waitsnd(conn.conn_kcp)==0)
-    {
-        rkcps_close_conn(&conn);        
-    }
 
 }
 
@@ -78,8 +81,11 @@ static void on_read_kcpheader(rkcpconn& conn)
             return;
         }
         conn.data_len = GET_DATALEN(header);
+        printf("len:%d\n", conn.data_len);
         conn.call_id = GET_CALLID(header);
+        printf("call_id:%d\n", conn.call_id);
         conn.callmode = GET_CALLMODE(header);
+        printf("call_mode:%d\n", conn.callmode);
         if(ikcp_peeksize(conn.conn_kcp)>0)
             on_read_kcpdata(conn);
     }
@@ -92,17 +98,24 @@ static void on_read(uv_udp_t *req, ssize_t nread, const uv_buf_t *buf, const str
     auto caddr = (const struct sockaddr_in*) addr;
     auto now_time = uv_now(loop);
     if(caddr == nullptr)
+    {
+        assert(nread==0);
         return;
+    }
+
     auto conn = rkcps_open_conn(caddr->sin_addr.s_addr, caddr->sin_port, now_time);
     if(conn == NULL)
+    {
+        rklog("pool is full");
         return;
+    }
     if(conn->conn_kcp->user == NULL)
     {
         conn->conn_kcp->user = malloc(sizeof(struct sockaddr_in));
         memcpy(conn->conn_kcp->user, addr, sizeof(struct sockaddr_in));
     } 
 
-    ikcp_input(conn->conn_kcp, buf->base, nread);
+    if(nread>0) ikcp_input(conn->conn_kcp, buf->base, nread);
     conn->callmode == 0 ? on_read_kcpheader(*conn) : on_read_kcpdata(*conn);
 
 }
@@ -123,6 +136,7 @@ static void uv_alloc_buf(uv_handle_t* handle, size_t suggested_size, uv_buf_t* b
 static void on_update(uv_check_t* handle)
 {
     rkcps_update(uv_now(loop));
+    rklog("update rkcps");
 }
 
 //start udp servver

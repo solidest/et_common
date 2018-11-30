@@ -112,32 +112,32 @@ static int udp_output(const char *buf, int len, ikcpcb *kcp, void *user)
 //retrun status code(>0) or errorcode(<0)
 int rkcpc_call(int connid, int callid, const char * send_buff, int send_len)
 {
-    rkcpconn & conn = p_conn_pool[connid];
+    ikcpcb * conn = p_conn_pool[connid].conn_kcp;
     unsigned long long header = MAKE_CALL_HEADER(RKCP_CALLMODE_VOID, callid, send_len);
     char recv_buff[2048] = {0};
-    if(ikcp_send(conn.conn_kcp, (char *)&header, 8)!=0 || ikcp_send(conn.conn_kcp, send_buff, send_len)!=0)
+    if(ikcp_send(conn, (char *)&header, 8)!=0 || ikcp_send(conn, send_buff, send_len)!=0)
         return RKCP_ERR_KCP;
     while(true)
     {
-        ikcp_update(conn.conn_kcp, get_now());
-        auto reci = recvfrom(conn.conn_socket, recv_buff, sizeof(recv_buff), 0, NULL, NULL);
+        ikcp_update(conn, get_now());
+        auto reci = recvfrom(p_conn_pool[connid].conn_socket, recv_buff, sizeof(recv_buff), 0, NULL, NULL);
         if(reci < 0)
         {
-            reset_kcp(conn.conn_kcp);
+            reset_kcp(conn);
             return RKCP_ERR_TIMEOUT;
         }
 
-        if (reci > 0) ikcp_input(conn.conn_kcp, recv_buff, reci);
-        if(ikcp_peeksize(conn.conn_kcp)>=8)
+        if (reci > 0) ikcp_input(conn, recv_buff, reci);
+        if(ikcp_peeksize(conn)>=8 && ikcp_waitsnd(conn)==0)
         {
             header = 0;
-            if(ikcp_recv(conn.conn_kcp, (char*)&header, 8)!=8)
+            if(ikcp_recv(conn, (char*)&header, 8)!=8)
             {
-                reset_kcp(conn.conn_kcp);
+                reset_kcp(conn);
                 return RKCP_ERR_KCP;
             }
 
-            reset_kcp(conn.conn_kcp);
+            reset_kcp(conn);
             return GET_RESULT(header);
         }
     }
