@@ -58,7 +58,7 @@ static int udp_output(const char *buf, int len, ikcpcb *kcp, void *user)
 //get the connection id of server
 //input ip & port of server
 //return connection id
- int rkcpc_getid(const char* serverip, int serverport)
+int rkcpc_getid(const char* serverip, int serverport)
 {
     int iserverip = inet_addr(serverip);
     int idx = 0;
@@ -121,14 +121,16 @@ int rkcpc_call(int connid, int callid, const char * send_buff, int send_len)
     char recv_buff[2048] = {0};
     if(ikcp_send(conn, (char *)&header, 8)!=0 || ikcp_send(conn, send_buff, send_len)!=0)
         return RKCP_ERR_KCP;
+    ikcp_update(conn, get_now());
 
+    int to_count = 0;
+    int ret = 0;
 
     while(true)
     {
-        auto now_time = get_now();
-        
-        auto reci = recvfrom(p_conn_pool[connid].conn_socket, recv_buff, 2048, 0, NULL, NULL);
 
+        auto reci = recvfrom(p_conn_pool[connid].conn_socket, recv_buff, 2048, 0, NULL, NULL);
+        
         if(reci == 0)
         {
             printf("recv 0\n");
@@ -137,21 +139,22 @@ int rkcpc_call(int connid, int callid, const char * send_buff, int send_len)
         if(reci < 0)
         {
             printf("time out\n");
-            //sleep(1);
-            //reset_kcp(conn);
-            //return RKCP_ERR_TIMEOUT;
+            to_count += 1;
+            if (to_count>10)
+                return RKCP_ERR_TIMEOUT;
         }
 
         if (reci > 0) 
         {
             ikcp_input(conn, recv_buff, reci);
-            printf("recv upd := size(%d)\n", reci);           
+            printf("recv upd := size(%ld)\n", reci);           
         }
 
         if (reci >0 || ikcp_waitsnd(conn)>0)
-            ikcp_update(conn, now_time);
+            ikcp_update(conn, get_now());
 
-        printf("peeksize := (%d)\n", ikcp_peeksize(conn));   
+        printf("peeksize := (%d)\n", ikcp_peeksize(conn)); 
+        printf("waitsend1 %d\n", ikcp_waitsnd(conn));  
         if(ikcp_peeksize(conn)>=8)
         {
             header = 0;
@@ -161,11 +164,24 @@ int rkcpc_call(int connid, int callid, const char * send_buff, int send_len)
                 return RKCP_ERR_KCP;
             }
 
-            reset_kcp(conn);
             printf("recv header := %lld\n", header);
-            return GET_RESULT(header);
+            ret = GET_RESULT(header);
         }
         
+        if(ret != 0)
+        {
+            if(ikcp_waitsnd(conn) == 0 )
+            {
+                printf("finish!\n");
+                reset_kcp(conn);
+                return ret; 
+            }
+            else
+            {
+                printf("waitsnd2 %d\n", ikcp_waitsnd(conn));
+            }
+     
+        }
 
     }
 

@@ -13,7 +13,7 @@ using namespace std;
 int start_logclient()
 {
     rkcpc_open(2);
-    for(int i=0; i<10; i++)
+    for(int i=0; i<3; i++)
     {
         int h = rkcpc_getid("192.168.1.111", 5000);
         const char * msg = "test message";
@@ -109,8 +109,8 @@ int main(int argc, const char * argv[]) {
     
     int ret = 0;
     cout<<endl<<"<<<<<<<<<<<<<<<<<<<  begin test  >>>>>>>>>>>>>>>>>>>"<<endl<<endl;  
-    //start_logclient();  
-    ret = test_logserver();
+    start_logclient();  
+    //ret = test_logserver();
     //ret = test_rkcp_client();
     //ret = test_rkcp_server();
     //ret = test_dbserver();
