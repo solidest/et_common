@@ -13,13 +13,14 @@ using namespace std;
 int start_logclient()
 {
     rkcpc_open(2);
-    //for(int i=0; i<10; i++)
-    //{
+    for(int i=0; i<10; i++)
+    {
         int h = rkcpc_getid("192.168.1.111", 5000);
         const char * msg = "test message";
         int res = rkcpc_call(h, 0, msg, strlen(msg)+1);
-        
-    //}
+        printf("result := %d\n", res);
+        printf("\n");
+    }
     rkcpc_close();
 
 }

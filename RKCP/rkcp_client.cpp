@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <ctime> 
+#include <iostream>
 
 #include "rkcp_client.h"
 
@@ -28,6 +29,7 @@ static int udp_output(const char *buf, int len, ikcpcb *kcp, void *user)
 {
     rkcpconn& conn = *(rkcpconn*)user;
     send(conn.conn_socket, buf, len, 0);
+    printf("send udp(%d)\n", len);
 }
 
 
@@ -93,7 +95,7 @@ static int udp_output(const char *buf, int len, ikcpcb *kcp, void *user)
     if(loc_addr.sin_addr.s_addr <<16 != ser_addr.sin_addr.s_addr<<16)
         return RKCP_ERR_CROSSDOMAIN;
 
-    ikcpcb *kcp = ikcp_create(((loc_addr.sin_addr.s_addr & 0xFFFF0000) | (serverport & 0x0000FFFF)), &p_conn_pool[idx]);
+    ikcpcb *kcp = ikcp_create(MAKE_CONV(loc_addr.sin_addr.s_addr, loc_addr.sin_port), &p_conn_pool[idx]);
     ikcp_nodelay(kcp, 1, 10, 2, 1);
     kcp->output = udp_output;
 
@@ -112,23 +114,45 @@ static int udp_output(const char *buf, int len, ikcpcb *kcp, void *user)
 //retrun status code(>0) or errorcode(<0)
 int rkcpc_call(int connid, int callid, const char * send_buff, int send_len)
 {
+
     ikcpcb * conn = p_conn_pool[connid].conn_kcp;
+    printf("conv := %d \n", conn->conv);
     unsigned long long header = MAKE_CALL_HEADER(RKCP_CALLMODE_VOID, callid, send_len);
     char recv_buff[2048] = {0};
     if(ikcp_send(conn, (char *)&header, 8)!=0 || ikcp_send(conn, send_buff, send_len)!=0)
         return RKCP_ERR_KCP;
+
+
     while(true)
     {
-        ikcp_update(conn, get_now());
-        auto reci = recvfrom(p_conn_pool[connid].conn_socket, recv_buff, sizeof(recv_buff), 0, NULL, NULL);
-        if(reci < 0)
+        auto now_time = get_now();
+        
+        auto reci = recvfrom(p_conn_pool[connid].conn_socket, recv_buff, 2048, 0, NULL, NULL);
+
+        if(reci == 0)
         {
-            reset_kcp(conn);
-            return RKCP_ERR_TIMEOUT;
+            printf("recv 0\n");
         }
 
-        if (reci > 0) ikcp_input(conn, recv_buff, reci);
-        if(ikcp_peeksize(conn)>=8 && ikcp_waitsnd(conn)==0)
+        if(reci < 0)
+        {
+            printf("time out\n");
+            //sleep(1);
+            //reset_kcp(conn);
+            //return RKCP_ERR_TIMEOUT;
+        }
+
+        if (reci > 0) 
+        {
+            ikcp_input(conn, recv_buff, reci);
+            printf("recv upd := size(%d)\n", reci);           
+        }
+
+        if (reci >0 || ikcp_waitsnd(conn)>0)
+            ikcp_update(conn, now_time);
+
+        printf("peeksize := (%d)\n", ikcp_peeksize(conn));   
+        if(ikcp_peeksize(conn)>=8)
         {
             header = 0;
             if(ikcp_recv(conn, (char*)&header, 8)!=8)
@@ -138,8 +162,11 @@ int rkcpc_call(int connid, int callid, const char * send_buff, int send_len)
             }
 
             reset_kcp(conn);
+            printf("recv header := %lld\n", header);
             return GET_RESULT(header);
         }
+        
+
     }
 
 }

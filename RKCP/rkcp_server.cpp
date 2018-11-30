@@ -6,6 +6,7 @@
 
 #include <ctime> 
 #include "rkcp_server.h"
+#include <iostream>
 
 typedef struct LIST_ITEM
 {
@@ -77,6 +78,7 @@ rkcpconn * rkcps_open_conn(int clientip, int clientport, long long now_time)
     {
         if(it->out_time<now_time)
         {
+            printf("timeout conn\n");
             auto bkit = it;
             it = it->next;
             rkcps_close_conn(&bkit->conn);
@@ -84,6 +86,7 @@ rkcpconn * rkcps_open_conn(int clientip, int clientport, long long now_time)
         }
         else if(it->conn.conn_kcp->conv == conv)
         {
+            printf("reuse conn\n");
             return &it->conn;
         }
         else

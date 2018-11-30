@@ -30,7 +30,7 @@
 
 #define RKCP_RESULT_OK 1
 
-#define RKCP_TIMEOUT_COUNT 30   //milliseconds
+#define RKCP_TIMEOUT_COUNT 100   //milliseconds
 
 #define RKCP_ERR_TIMEOUT -1
 #define RKCP_ERR_KCP -2
