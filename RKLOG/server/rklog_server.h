@@ -9,7 +9,7 @@
 #define RKLOG_H_
 
 
-int rklog_start(const char* serverip, int serverport, int connpoolsize);
+int rklog_serv_start(const char* serverip, unsigned short serverport, const char* logfile);
 
 
 #endif /* !RKLOG_H_ */

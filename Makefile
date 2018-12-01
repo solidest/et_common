@@ -6,7 +6,7 @@ MAIN_SRC := main.cpp
 
 
 # compile marcros
-DIRS := RKCP RKLOG
+DIRS := RKLOG
 OBJS :=
 
 # intermedia compile marcros
@@ -14,6 +14,7 @@ OBJS :=
 ALL_OBJS := 
 CLEAN_FILES := $(TARGET) $(OBJS)
 DIST_CLEAN_FILES := $(OBJS)
+LIB_INCLUDE := include/rpc/librpc.a
 LIB_REF := -L$(BIN_PATH) -luv
 
 # recursive wildcard
@@ -24,8 +25,8 @@ default: show-info all
 
 # non-phony targets
 $(TARGET): build-subdirs $(OBJS) find-all-objs
-	@echo -e "\tCC" $(CCFLAG) $(ALL_OBJS) $(MAIN_SRC) -o $@ $(LIB_REF)
-	@$(CC) $(CCFLAG) $(ALL_OBJS) $(MAIN_SRC) -o $@ $(LIB_REF)
+	@echo -e "\tCC" -pthread $(CCFLAG) -I$(INCLUDE_PATH) $(ALL_OBJS) $(MAIN_SRC) $(LIB_INCLUDE) -o $@ #$(LIB_REF)
+	@$(CC)  -pthread $(CCFLAG) -I$(INCLUDE_PATH) $(ALL_OBJS) $(MAIN_SRC)  $(LIB_INCLUDE) -o $@ #$(LIB_REF)
 
 # phony targets
 .PHONY: all
