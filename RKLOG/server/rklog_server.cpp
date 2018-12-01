@@ -123,7 +123,7 @@ static void on_read(uv_udp_t *req, ssize_t nread, const uv_buf_t *buf, const str
 
     auto caddr = (const struct sockaddr_in*) addr;
     
-    printf("recv from %d:%d udp(%d)\n", caddr->sin_addr.s_addr, caddr->sin_port, nread);
+    printf("recv from %d:%d udp(%ld)\n", caddr->sin_addr.s_addr, caddr->sin_port, nread);
 
     auto conn = rkcps_open_conn(caddr->sin_addr.s_addr, caddr->sin_port, now_time);
     //printf("conv := %d\n", conn->conn_kcp->conv);

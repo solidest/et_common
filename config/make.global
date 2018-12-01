@@ -7,9 +7,12 @@ MAKEFLAG := -s --no-print-directory
 # compile marcro
 CC := g++
 
+# include path
+INCLUDE_PATH := /home/byx/et/et_common/include/
+
 # compile flags
 CCFLAG := -g
-OBJCCFLAG := $(CCFLAG) -c
+OBJCCFLAG := $(CCFLAG) -c -I$(INCLUDE_PATH)
 
 
 # recursive make and clean

@@ -15,7 +15,7 @@ int start_logclient()
     rkcpc_open(2);
     for(int i=0; i<3; i++)
     {
-        int h = rkcpc_getid("192.168.1.111", 5000);
+        int h = rkcpc_getid("192.168.136.138", 5000);
         const char * msg = "test message";
         int res = rkcpc_call(h, 0, msg, strlen(msg)+1);
         printf("result := %d\n", res);
@@ -27,7 +27,7 @@ int start_logclient()
 
 int test_logserver()
 {
-    return rklog_start("192.168.1.111", 5000, 10);
+    return rklog_start("192.168.1136.138", 5000, 10);
     
     
 }
@@ -109,8 +109,8 @@ int main(int argc, const char * argv[]) {
     
     int ret = 0;
     cout<<endl<<"<<<<<<<<<<<<<<<<<<<  begin test  >>>>>>>>>>>>>>>>>>>"<<endl<<endl;  
-    start_logclient();  
-    //ret = test_logserver();
+    //start_logclient();  
+    ret = test_logserver();
     //ret = test_rkcp_client();
     //ret = test_rkcp_server();
     //ret = test_dbserver();

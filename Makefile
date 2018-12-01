@@ -14,7 +14,7 @@ OBJS :=
 ALL_OBJS := 
 CLEAN_FILES := $(TARGET) $(OBJS)
 DIST_CLEAN_FILES := $(OBJS)
-LIB_REF := $(BIN_PATH)/libuv.so
+LIB_REF := -L$(BIN_PATH) -luv
 
 # recursive wildcard
 rwildcard=$(foreach d,$(wildcard $(addsuffix *,$(1))),$(call rwildcard,$(d)/,$(2))$(filter $(subst *,%,$(2)),$(d)))
@@ -24,8 +24,8 @@ default: show-info all
 
 # non-phony targets
 $(TARGET): build-subdirs $(OBJS) find-all-objs
-	@echo -e "\tCC" $(CCFLAG) $(ALL_OBJS) $(MAIN_SRC) $(LIB_REF) -o $@
-	@$(CC) $(CCFLAG) $(ALL_OBJS) $(MAIN_SRC) $(LIB_REF) -o $@
+	@echo -e "\tCC" $(CCFLAG) $(ALL_OBJS) $(MAIN_SRC) -o $@ $(LIB_REF)
+	@$(CC) $(CCFLAG) $(ALL_OBJS) $(MAIN_SRC) -o $@ $(LIB_REF)
 
 # phony targets
 .PHONY: all
