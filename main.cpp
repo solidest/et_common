@@ -19,7 +19,7 @@ int start_logclient()
 
 int test_logserver()
 {
-    rklog_serv_start("192.168.136.138", 5000);  
+    rklog_serv_start("192.168.136.138", 5000, "rklog");  
 }
 
 int test_dbserver()
