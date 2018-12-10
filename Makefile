@@ -6,7 +6,7 @@ MAIN_SRC := main.cpp
 
 
 # compile marcros
-DIRS := RKLOG
+DIRS := RKLOG RKDB
 OBJS :=
 
 # intermedia compile marcros

@@ -5,13 +5,14 @@
 
 #include "RKLOG/server/rklog_server.h"
 #include "RKLOG/client/rklog_client.h"
+#include "RKDB/server/rkdb_server.h"
 
 using namespace std;
 
 int start_logclient()
 {
     rkLog rlog("192.168.136.138", 5000);
-    for(int i=0; i<10; i++)
+    for(int i=0; i<1000; i++)
     {
         rlog.log("test");        
     }
@@ -40,11 +41,20 @@ int test_dbserver()
     // }
 }
 
+int test_snowflake()
+{
+    RkdbServer db(254);
+    //auto n = db.GetNow();
+    //for(int i=0; i<4099; i++)
+        //std::cout << db.GetNewId() << endl;
+}
+
 int main(int argc, const char * argv[]) {
     
     int ret = 0;
     cout<<endl<<"<<<<<<<<<<<<<<<<<<<  begin test  >>>>>>>>>>>>>>>>>>>"<<endl<<endl;  
-    start_logclient();  
+    test_snowflake();
+    //start_logclient();  
     //ret = test_logserver();
 
     //start_logclient();
