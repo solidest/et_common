@@ -14,7 +14,7 @@ OBJS :=
 ALL_OBJS := 
 CLEAN_FILES := $(TARGET) $(OBJS)
 DIST_CLEAN_FILES := $(OBJS)
-LIB_INCLUDE := include/rpc/librpc.a
+LIB_INCLUDE := bin/librpc.a bin/librocksdb.a
 LIB_REF := -L$(BIN_PATH) -luv
 
 # recursive wildcard
