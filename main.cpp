@@ -6,7 +6,11 @@
 #include "RKLOG/server/rklog_server.h"
 #include "RKLOG/client/rklog_client.h"
 #include "RKDB/server/rkdb_server.h"
+
 #include "rapidjson/document.h"
+#include "rapidjson/stringbuffer.h"
+#include "rapidjson/writer.h"
+
 
 using namespace std;
 using namespace rapidjson;
@@ -46,6 +50,9 @@ int test_logserver()
 int test_dbserver()
 {
     RkdbServer db(254);
+    string lp = db.GetProjectInfoList();
+    cout<<lp<<endl;
+
     Document doc(kObjectType);
     doc.AddMember("name", "project name test", doc.GetAllocator());
     doc.AddMember("notes", "notes of project", doc.GetAllocator());
@@ -53,9 +60,12 @@ int test_dbserver()
     v.PushBack("test", doc.GetAllocator());
     v.PushBack("demo", doc.GetAllocator());
     doc.AddMember("tag", v, doc.GetAllocator());
-    
-    string s(doc.GetString());
-    auto id = db.NewProjectInfo(s);
+
+    StringBuffer buffer;
+    Writer<rapidjson::StringBuffer> writer(buffer);
+    doc.Accept(writer);
+    string strJson = buffer.GetString();
+    auto id = db.NewProjectInfo(strJson);
    
     string pjcontent("content of project");
     db.SaveProject(id, pjcontent);
@@ -63,7 +73,8 @@ int test_dbserver()
     string pjc = db.OpenProject(id);
     assert(pjcontent == pjc);
 
-    string lp = db.GetProjectInfoList();
+    lp = db.GetProjectInfoList();
+    cout<<lp<<endl;
     db.DeleProject(id);
     
     

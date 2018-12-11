@@ -1,15 +1,21 @@
 
-#include <fstream>
+
 
 #include "rkdb_server.h"
 #include "rpc/this_handler.h"
+
 #include "rocksdb/slice.h"
 #include "rocksdb/options.h"
 #include "rocksdb/utilities/transaction.h"
 #include "rocksdb/utilities/transaction_db.h"
+
 #include "rapidjson/document.h"
+#include "rapidjson/stringbuffer.h"
+#include "rapidjson/writer.h"
+
 
 using namespace rapidjson;
+using namespace std;
 
 //initial db server
 RkdbServer::RkdbServer(int kyid)
@@ -92,16 +98,21 @@ string RkdbServer::GetProjectInfoList()
     Document::AllocatorType& allocator = doc.GetAllocator();
 
     Iterator* iterator = _db->NewIterator(ReadOptions(), _col_handles[COLUMN_PROJECT_INFO]);
+
     for (iterator->SeekToFirst(); iterator->Valid(); iterator->Next())
     {
         Document d(kObjectType);
         Value key(kNumberType);
         key.SetInt64(*(long long *)iterator->key().data());
         d.Parse(iterator->value().data());
-        d.AddMember("key", key, allocator);
+        d.AddMember("key", key, d.GetAllocator());
         doc.PushBack(d, allocator);
     }
-    return doc.GetString();
+    
+    StringBuffer buffer;
+    Writer<rapidjson::StringBuffer> writer(buffer);
+    doc.Accept(writer);
+    return buffer.GetString();
 }
 
 
@@ -114,15 +125,18 @@ long long RkdbServer::NewProjectInfo(string & value)
     Value vi(kNumberType);
     vi.SetInt64(ti);
     Value vs(kStringType);
-    vs.SetString(value.c_str(), value.size());
+    vs.SetString(value.c_str(), value.length()+1);
     Document doc(kObjectType);
     doc.AddMember(STR_CREATE_TIME, vi, doc.GetAllocator());
     doc.AddMember(STR_UPDATE_TIME, vi, doc.GetAllocator());
     doc.AddMember(STR_INFO_VALUE, vs, doc.GetAllocator());
 
     auto id = GetNewId();
-    rocksdb::Slice slkey((char *)&id, 8);
-    rocksdb::Slice slvalue = doc.GetString();
+    Slice slkey((char *)&id, 8);
+    StringBuffer buffer;
+    Writer<rapidjson::StringBuffer> writer(buffer);
+    doc.Accept(writer);
+    Slice slvalue = buffer.GetString();
     Status s = _db->Put(WriteOptions(), _col_handles[COLUMN_PROJECT_INFO], slkey, slvalue);
     assert(s.ok());
     return id;
@@ -144,7 +158,10 @@ void RkdbServer::UpdateProjectInfo(long long & pid, string & value)
     doc[STR_UPDATE_TIME].SetInt64(ti);
     doc[STR_INFO_VALUE].SetString(value.c_str(), value.size());
     
-    rocksdb::Slice slvalue = doc.GetString();
+    StringBuffer buffer;
+    Writer<rapidjson::StringBuffer> writer(buffer);
+    doc.Accept(writer);
+    Slice slvalue = buffer.GetString();
     s = _db->Put(WriteOptions(), _col_handles[COLUMN_PROJECT_INFO], slkey, slvalue);
     assert(s.ok());
 }
@@ -175,7 +192,10 @@ void RkdbServer::SaveProject(long long & pid, string & value)
     Document doc;
     doc.Parse(v.c_str());
     doc[STR_UPDATE_TIME].SetInt64(ti);
-    Slice slvalue = doc.GetString();
+    StringBuffer buffer;
+    Writer<rapidjson::StringBuffer> writer(buffer);
+    doc.Accept(writer);
+    Slice slvalue = buffer.GetString();
     s = _db->Put(WriteOptions(), _col_handles[COLUMN_PROJECT_INFO], slkey, slvalue);
     assert(s.ok());
 
