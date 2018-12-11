@@ -94,25 +94,30 @@ string RkdbServer::GetProjectInfoList()
     Document doc(kArrayType);
     Document::AllocatorType& allocator = doc.GetAllocator();
 
+    ReadOptions ro;
+    
     Iterator* iterator = _db->NewIterator(ReadOptions(), _col_handles[COLUMN_PROJECT_INFO]);
 
-    int ii = 1;
     for (iterator->SeekToFirst(); iterator->Valid(); iterator->Next())
     {
         Value v(kObjectType);
-        Value vv(kStringType);
         Value key(kNumberType);
-        key.SetInt64(*(long long *)iterator->key().data());
-        vv.SetString(iterator->value().data(), allocator);
+        Value val(kStringType);
+        key.SetInt64(stoll(iterator->key().ToString()));
+        val.SetString(iterator->value().data(), iterator->value().size());
         v.AddMember("key", key, allocator);
-        v.AddMember("value", vv, allocator);
+        v.AddMember("value", val, allocator);
         doc.PushBack(v, allocator);
     }
+
+    delete iterator;
     
     StringBuffer buffer;
     Writer<rapidjson::StringBuffer> writer(buffer);
     doc.Accept(writer);
-    return buffer.GetString();
+    string ret;
+    ret.assign(buffer.GetString(), buffer.GetSize());
+    return ret;
 }
 
 
@@ -132,11 +137,13 @@ long long RkdbServer::NewProjectInfo(string & value)
     doc.AddMember(STR_INFO_VALUE, vs, doc.GetAllocator());
 
     auto id = GetNewId();
-    Slice slkey((char *)&id, 8);
+    char sid[20] = { 0 };
+    sprintf(sid, "%019lld", id);
+    Slice slkey = sid;
     StringBuffer buffer;
     Writer<StringBuffer> writer(buffer);
     doc.Accept(writer);
-    Slice slvalue = buffer.GetString();
+    Slice slvalue(buffer.GetString(), buffer.GetSize());
     Status s = _db->Put(WriteOptions(), _col_handles[COLUMN_PROJECT_INFO], slkey, slvalue);
     assert(s.ok());
     return id;
@@ -149,7 +156,9 @@ void RkdbServer::UpdateProjectInfo(long long & pid, string & value)
 
     string v;
     long long ti = GetNow() + TIME_STARTPOINT;
-    rocksdb::Slice slkey((char *)&pid, 8);
+    char sid[20] = { 0 };
+    sprintf(sid, "%019lld", pid);
+    Slice slkey = sid;
 
     Status s = _db->Get(ReadOptions(), _col_handles[COLUMN_PROJECT_INFO], slkey, &v);
     assert(s.ok());
@@ -161,7 +170,7 @@ void RkdbServer::UpdateProjectInfo(long long & pid, string & value)
     StringBuffer buffer;
     Writer<StringBuffer> writer(buffer);
     doc.Accept(writer);
-    Slice slvalue = buffer.GetString();
+    Slice slvalue(buffer.GetString(), buffer.GetSize());
     s = _db->Put(WriteOptions(), _col_handles[COLUMN_PROJECT_INFO], slkey, slvalue);
     assert(s.ok());
 }
@@ -171,7 +180,9 @@ void RkdbServer::DeleProject(long long & pid)
 {
     if(CheckIsRunning()) return; 
     WriteBatch batch;
-    rocksdb::Slice slkey((char *)&pid, 8);
+    char sid[20] = { 0 };
+    sprintf(sid, "%019lld", pid);
+    Slice slkey = sid;
     batch.Delete(_col_handles[COLUMN_PROJECT_INFO], slkey);
     batch.Delete(_col_handles[COLUMN_PROJECT], slkey);
     Status s = _db->Write(WriteOptions(), &batch);
@@ -182,7 +193,9 @@ void RkdbServer::DeleProject(long long & pid)
 void RkdbServer::SaveProject(long long & pid, string & value)
 {
     if(CheckIsRunning()) return;
-    Slice slkey((const char *)&pid, 8);
+    char sid[20] = { 0 };
+    sprintf(sid, "%019lld", pid);
+    Slice slkey = sid;
 
     //record update time
     string v;
@@ -197,7 +210,7 @@ void RkdbServer::SaveProject(long long & pid, string & value)
     StringBuffer buffer;
     Writer<rapidjson::StringBuffer> writer(buffer);
     doc.Accept(writer);
-    Slice slvalue = buffer.GetString();
+    Slice slvalue(buffer.GetString(), buffer.GetSize());
 
     //save project info & content
     batch.Put(_col_handles[COLUMN_PROJECT_INFO], slkey, slvalue);
@@ -212,7 +225,9 @@ void RkdbServer::SaveProject(long long & pid, string & value)
 string RkdbServer::OpenProject(long long & pid)
 {
     string ret;
-    rocksdb::Slice slkey((char *)&pid, 8);
+    char sid[20] = { 0 };
+    sprintf(sid, "%019lld", pid);
+    Slice slkey = sid;
     Status s = _db->Get(ReadOptions(), _col_handles[COLUMN_PROJECT], slkey, &ret);
     assert(s.ok());
     return ret;
@@ -274,9 +289,10 @@ inline long long RkdbServer::GetNewId()
     AtomicInt64 timestamp{ 0 };
     timestamp = GetNow();
 
+    _mtx.lock();
     if (_last_timestamp == timestamp) 
     {
-        _sequence = (_sequence + 1) & 4095;
+        _sequence = (_sequence+1) & 4095;
         if (0 == _sequence) timestamp = tilNextMillis(_last_timestamp);
     }
     else 
@@ -284,8 +300,11 @@ inline long long RkdbServer::GetNewId()
         _sequence = 0;
     }
 
-    _last_timestamp = timestamp.load();
+    long long ret = (timestamp << 22) | ((_kyid & 0x3FF) << 12) | (_sequence & 0xFFF);
 
-    return (timestamp << 22) | (_kyid << 12) | _sequence;
+    _last_timestamp = timestamp.load();
+    _mtx.unlock();
+
+    return ret;
 }
 
