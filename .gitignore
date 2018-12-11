@@ -3,3 +3,4 @@
 *.out
 *.so
 db_data\
+bin\db_data\

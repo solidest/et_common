@@ -134,7 +134,7 @@ long long RkdbServer::NewProjectInfo(string & value)
     auto id = GetNewId();
     Slice slkey((char *)&id, 8);
     StringBuffer buffer;
-    Writer<rapidjson::StringBuffer> writer(buffer);
+    Writer<StringBuffer> writer(buffer);
     doc.Accept(writer);
     Slice slvalue = buffer.GetString();
     Status s = _db->Put(WriteOptions(), _col_handles[COLUMN_PROJECT_INFO], slkey, slvalue);
@@ -159,7 +159,7 @@ void RkdbServer::UpdateProjectInfo(long long & pid, string & value)
     doc[STR_INFO_VALUE].SetString(value.c_str(), value.size());
     
     StringBuffer buffer;
-    Writer<rapidjson::StringBuffer> writer(buffer);
+    Writer<StringBuffer> writer(buffer);
     doc.Accept(writer);
     Slice slvalue = buffer.GetString();
     s = _db->Put(WriteOptions(), _col_handles[COLUMN_PROJECT_INFO], slkey, slvalue);
