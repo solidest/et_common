@@ -137,7 +137,9 @@ long long RkdbServer::NewProjectInfo(string & value)
     Writer<StringBuffer> writer(buffer);
     doc.Accept(writer);
     Slice slvalue = buffer.GetString();
-    Status s = _db->Put(WriteOptions(), _col_handles[COLUMN_PROJECT_INFO], slkey, slvalue);
+    WriteOptions write_options;
+    write_options.sync = true ;
+    Status s = _db->Put(write_options, _col_handles[COLUMN_PROJECT_INFO], slkey, slvalue);
     assert(s.ok());
     return id;
 }
@@ -162,7 +164,9 @@ void RkdbServer::UpdateProjectInfo(long long & pid, string & value)
     Writer<StringBuffer> writer(buffer);
     doc.Accept(writer);
     Slice slvalue = buffer.GetString();
-    s = _db->Put(WriteOptions(), _col_handles[COLUMN_PROJECT_INFO], slkey, slvalue);
+    WriteOptions write_options;
+    write_options.sync = true ;
+    s = _db->Put(write_options, _col_handles[COLUMN_PROJECT_INFO], slkey, slvalue);
     assert(s.ok());
 }
 
@@ -174,7 +178,9 @@ void RkdbServer::DeleProject(long long & pid)
     rocksdb::Slice slkey((char *)&pid, 8);
     batch.Delete(_col_handles[COLUMN_PROJECT_INFO], slkey);
     batch.Delete(_col_handles[COLUMN_PROJECT], slkey);
-    Status s = _db->Write(WriteOptions(), &batch);
+    WriteOptions write_options;
+    write_options.sync = true ;
+    Status s = _db->Write(write_options, &batch);
     assert(s.ok());
 }
 
@@ -187,6 +193,10 @@ void RkdbServer::SaveProject(long long & pid, string & value)
     //record update time
     string v;
     auto ti = GetNow() + TIME_STARTPOINT;
+    WriteOptions write_options;
+    write_options.sync = true;
+    WriteBatch batch;
+
     Status s = _db->Get(ReadOptions(), _col_handles[COLUMN_PROJECT_INFO], slkey, &v);
     assert(s.ok());
     Document doc;
@@ -196,12 +206,13 @@ void RkdbServer::SaveProject(long long & pid, string & value)
     Writer<rapidjson::StringBuffer> writer(buffer);
     doc.Accept(writer);
     Slice slvalue = buffer.GetString();
-    s = _db->Put(WriteOptions(), _col_handles[COLUMN_PROJECT_INFO], slkey, slvalue);
-    assert(s.ok());
 
-    //save project content
+    //save project info & content
+    batch.Put(_col_handles[COLUMN_PROJECT_INFO], slkey, slvalue);
     slvalue = value;
-    s = _db->Put(WriteOptions(), _col_handles[COLUMN_PROJECT], slkey, slvalue);
+    batch.Put(_col_handles[COLUMN_PROJECT], slkey, slvalue);
+
+    s = _db->Write(write_options, &batch);
     assert(s.ok());
 }
 
