@@ -5,6 +5,11 @@
 #include "rpc/this_handler.h"
 #include "rocksdb/slice.h"
 #include "rocksdb/options.h"
+#include "rocksdb/utilities/transaction.h"
+#include "rocksdb/utilities/transaction_db.h"
+#include "rapidjson/document.h"
+
+using namespace rapidjson;
 
 //initial db server
 RkdbServer::RkdbServer(int kyid)
@@ -29,27 +34,21 @@ RkdbServer::RkdbServer(int kyid)
         s = _db->CreateColumnFamily(ColumnFamilyOptions(), "project_info", &cf);
         assert(s.ok());
         _col_handles.push_back(cf);
-
         s = _db->CreateColumnFamily(ColumnFamilyOptions(), "project", &cf);
         assert(s.ok());
         _col_handles.push_back(cf);
-
         s = _db->CreateColumnFamily(ColumnFamilyOptions(), "case", &cf);
         assert(s.ok());
         _col_handles.push_back(cf);
-
         s = _db->CreateColumnFamily(ColumnFamilyOptions(), "case_run", &cf);
         assert(s.ok());
         _col_handles.push_back(cf);
-
         s = _db->CreateColumnFamily(ColumnFamilyOptions(), "run_io", &cf);
         assert(s.ok());
         _col_handles.push_back(cf);
-
         s = _db->CreateColumnFamily(ColumnFamilyOptions(), "run_assert", &cf);
         assert(s.ok());
         _col_handles.push_back(cf);
-
         s = _db->CreateColumnFamily(ColumnFamilyOptions(), "run_info", &cf);
         assert(s.ok());
         _col_handles.push_back(cf);
@@ -85,76 +84,68 @@ RkdbServer::~RkdbServer()
     delete _db;  
 }
 
-//get now time tick
-inline long long RkdbServer::GetNow()
+//get all project info
+string RkdbServer::GetProjectInfoList()
 {
-    microClock_type2 tp = time_point_cast<milliseconds>(steady_clock::now()); 
-    long long ret = tp.time_since_epoch().count() + _time_diff;
-    return ret;
-}
+    if(CheckIsRunning()) return 0;
+    Document doc(kArrayType);
+    Document::AllocatorType& allocator = doc.GetAllocator();
 
-//check is server idle
-inline bool RkdbServer::CheckIsRunning()
-{
-    if(!_is_runcase)
-        return false;
-    auto err_obj = std::make_tuple(1, "One Case Is Running");
-    rpc::this_handler().respond_error(err_obj);
-    return true;
-}
-
-
-//get a new id
-inline long long RkdbServer::GetNewId()
-{
-    AtomicInt64 timestamp{ 0 };
-    timestamp = GetNow();
-
-    if (_last_timestamp == timestamp) 
+    Iterator* iterator = _db->NewIterator(ReadOptions(), _col_handles[COLUMN_PROJECT_INFO]);
+    for (iterator->SeekToFirst(); iterator->Valid(); iterator->Next())
     {
-        _sequence = (_sequence + 1) & 4095;
-        if (0 == _sequence) timestamp = tilNextMillis(_last_timestamp);
+        Document d(kObjectType);
+        Value key(kNumberType);
+        key.SetInt64(*(long long *)iterator->key().data());
+        d.Parse(iterator->value().data());
+        d.AddMember("key", key, allocator);
+        doc.PushBack(d, allocator);
     }
-    else 
-    {
-        _sequence = 0;
-    }
-
-    _last_timestamp = timestamp.load();
-
-    return (timestamp << 22) | (_kyid << 12) | _sequence;
+    return doc.GetString();
 }
+
 
 //new project file
-long long RkdbServer::NewProject(string & name, string & notes)
+long long RkdbServer::NewProjectInfo(string & value)
 {
     if(CheckIsRunning()) return 0;
 
-    ProjectInfo pinfo;
-    pinfo.create_time = pinfo.update_time = GetNow() + TIME_STARTPOINT;
-    memcpy(&pinfo.pj_name, name.c_str(), min(sizeof(pinfo.pj_name), name.size()));
-    memcpy(&pinfo.pj_notes, notes.c_str(), min(sizeof(pinfo.pj_notes), notes.size()));
+    auto ti = GetNow() + TIME_STARTPOINT;
+    Value vi(kNumberType);
+    vi.SetInt64(ti);
+    Value vs(kStringType);
+    vs.SetString(value.c_str(), value.size());
+    Document doc(kObjectType);
+    doc.AddMember(STR_CREATE_TIME, vi, doc.GetAllocator());
+    doc.AddMember(STR_UPDATE_TIME, vi, doc.GetAllocator());
+    doc.AddMember(STR_INFO_VALUE, vs, doc.GetAllocator());
 
     auto id = GetNewId();
     rocksdb::Slice slkey((char *)&id, 8);
-    rocksdb::Slice slvalue((char *)&pinfo, sizeof(ProjectInfo));
+    rocksdb::Slice slvalue = doc.GetString();
     Status s = _db->Put(WriteOptions(), _col_handles[COLUMN_PROJECT_INFO], slkey, slvalue);
     assert(s.ok());
     return id;
 }
 
 //update project info
-void RkdbServer::RenameProject(long long & pid, string & name, string & notes)
+void RkdbServer::UpdateProjectInfo(long long & pid, string & value)
 {
     if(CheckIsRunning()) return;
-    ProjectInfo pinfo;
-    pinfo.update_time = GetNow() + TIME_STARTPOINT;
-    memcpy(&pinfo.pj_name, name.c_str(), min(sizeof(pinfo.pj_name), name.size()));
-    memcpy(&pinfo.pj_notes, notes.c_str(), min(sizeof(pinfo.pj_notes), name.size()));
 
+    string v;
+    long long ti = GetNow() + TIME_STARTPOINT;
     rocksdb::Slice slkey((char *)&pid, 8);
-    rocksdb::Slice slvalue((char *)&pinfo, sizeof(ProjectInfo));
-    Status s = _db->Put(WriteOptions(), _col_handles[COLUMN_PROJECT_INFO], slkey, slvalue);
+
+    Status s = _db->Get(ReadOptions(), _col_handles[COLUMN_PROJECT_INFO], slkey, &v);
+    assert(s.ok());
+    Document doc;
+    doc.Parse(v.c_str());
+    doc[STR_UPDATE_TIME].SetInt64(ti);
+    doc[STR_INFO_VALUE].SetString(value.c_str(), value.size());
+    
+    rocksdb::Slice slvalue = doc.GetString();
+    s = _db->Put(WriteOptions(), _col_handles[COLUMN_PROJECT_INFO], slkey, slvalue);
     assert(s.ok());
 }
 
@@ -173,9 +164,24 @@ void RkdbServer::DeleProject(long long & pid)
 //save project content
 void RkdbServer::SaveProject(long long & pid, string & value)
 {
-    rocksdb::Slice slkey((char *)&pid, 8);
-    rocksdb::Slice slvalue = value;
-    Status s = _db->Put(WriteOptions(), _col_handles[COLUMN_PROJECT], slkey, slvalue);
+    if(CheckIsRunning()) return;
+    Slice slkey((const char *)&pid, 8);
+
+    //record update time
+    string v;
+    auto ti = GetNow() + TIME_STARTPOINT;
+    Status s = _db->Get(ReadOptions(), _col_handles[COLUMN_PROJECT_INFO], slkey, &v);
+    assert(s.ok());
+    Document doc;
+    doc.Parse(v.c_str());
+    doc[STR_UPDATE_TIME].SetInt64(ti);
+    Slice slvalue = doc.GetString();
+    s = _db->Put(WriteOptions(), _col_handles[COLUMN_PROJECT_INFO], slkey, slvalue);
+    assert(s.ok());
+
+    //save project content
+    slvalue = value;
+    s = _db->Put(WriteOptions(), _col_handles[COLUMN_PROJECT], slkey, slvalue);
     assert(s.ok());
 }
 
@@ -211,12 +217,52 @@ string RkdbServer::OpenProject(long long & pid)
 
 
 //id is full in one millis
-long long RkdbServer::tilNextMillis(long long lastTimestamp)
+inline long long RkdbServer::tilNextMillis(long long lastTimestamp)
 {
     long long timestamp = GetNow();
     while (timestamp == lastTimestamp) {
         timestamp = GetNow();
     }
     return timestamp;
+}
+
+
+//get now time tick
+inline long long RkdbServer::GetNow()
+{
+    microClock_type2 tp = time_point_cast<milliseconds>(steady_clock::now()); 
+    long long ret = tp.time_since_epoch().count() + _time_diff;
+    return ret;
+}
+
+//check is server idle
+inline bool RkdbServer::CheckIsRunning()
+{
+    if(!_is_runcase) return false;
+    auto err_obj = std::make_tuple(1, "One Case Is Running");
+    rpc::this_handler().respond_error(err_obj);
+    return true;
+}
+
+
+//get a new id
+inline long long RkdbServer::GetNewId()
+{
+    AtomicInt64 timestamp{ 0 };
+    timestamp = GetNow();
+
+    if (_last_timestamp == timestamp) 
+    {
+        _sequence = (_sequence + 1) & 4095;
+        if (0 == _sequence) timestamp = tilNextMillis(_last_timestamp);
+    }
+    else 
+    {
+        _sequence = 0;
+    }
+
+    _last_timestamp = timestamp.load();
+
+    return (timestamp << 22) | (_kyid << 12) | _sequence;
 }
 

@@ -6,8 +6,10 @@
 #include "RKLOG/server/rklog_server.h"
 #include "RKLOG/client/rklog_client.h"
 #include "RKDB/server/rkdb_server.h"
+#include "rapidjson/document.h"
 
 using namespace std;
+using namespace rapidjson;
 
 int start_logclient()
 {
@@ -44,18 +46,26 @@ int test_logserver()
 int test_dbserver()
 {
     RkdbServer db(254);
-    string pjname = "test";
-    string pjnotes = "test_notes";
-    string pjcontent = "content of project test";
-    auto pid = db.NewProject(pjname, pjnotes);
-    db.SaveProject(pid, pjcontent);
+    Document doc(kObjectType);
+    doc.AddMember("name", "project name test", doc.GetAllocator());
+    doc.AddMember("notes", "notes of project", doc.GetAllocator());
+    Value v(kArrayType);
+    v.PushBack("test", doc.GetAllocator());
+    v.PushBack("demo", doc.GetAllocator());
+    doc.AddMember("tag", v, doc.GetAllocator());
+    
+    string s(doc.GetString());
+    auto id = db.NewProjectInfo(s);
+   
+    string pjcontent("content of project");
+    db.SaveProject(id, pjcontent);
 
-    string pjc = db.OpenProject(pid);
+    string pjc = db.OpenProject(id);
     assert(pjcontent == pjc);
 
-
-    db.DeleProject(pid);
-
+    string lp = db.GetProjectInfoList();
+    db.DeleProject(id);
+    
     
 
     //auto n = db.GetNow();

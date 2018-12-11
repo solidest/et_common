@@ -5,7 +5,7 @@
 ** Login   <>
 **
 ** Started on  undefined Dec 9 6:49:34 PM 2018 header_template
-** Last update Mon Dec 9 6:50:59 PM 2018 header_template
+** Last update Tue Dec 10 5:09:27 PM 2018 header_template
 */
 
 #ifndef RKDB_SERVER_H_
@@ -20,7 +20,11 @@
 #include "rocksdb/db.h"
 
 #define TIME_STARTPOINT 1514736000000    //2018-01-01 00:00:00.000
+
 #define DB_FILE "./db_data" 
+#define STR_CREATE_TIME "CreateTime"
+#define STR_UPDATE_TIME "UpdateTime"
+#define STR_INFO_VALUE "ProjectInfo"
 
 #define COLUMN_PROJECT_INFO 1
 #define COLUMN_PROJECT      2
@@ -40,14 +44,6 @@ typedef std::atomic<long long> AtomicInt64;
 typedef std::atomic<int> AtomicInt;
 typedef std::atomic<bool> AtomicBool;
 
-struct ProjectInfo
-{
-    char pj_name[40];
-    long long create_time;
-    long long update_time;
-    char pj_notes[200];
-};
-
 
 class RkdbServer
 {
@@ -55,10 +51,9 @@ public:
     RkdbServer(int kyid);
     ~RkdbServer();
 
-    string GetProjectList();
-    long long NewProject(string & name, string & notes);
-    void RenameProject(long long & pid, string & name, string & notes);
-
+    string GetProjectInfoList();
+    long long NewProjectInfo(string & value);
+    void UpdateProjectInfo(long long & pid, string & value);
     void SaveProject(long long & pid, string & vlaue);
     string OpenProject(long long & pid);
     void DeleProject(long long & pid);
@@ -70,13 +65,13 @@ public:
     // void StopRunCase();
 
 private:
-    bool CheckIsRunning();
-    long long GetNow();
-    long long GetNewId();
-    long long tilNextMillis(long long lastTimestamp);
+    inline bool CheckIsRunning();
+    inline long long GetNow();
+    inline long long GetNewId();
+    inline long long tilNextMillis(long long lastTimestamp);
     inline bool existsFile (const char* fileName) 
     {
-        return ( access(fileName, F_OK) != -1 );
+        return (access(fileName, F_OK) != -1);
     }
 
     DB* _db;
