@@ -1,6 +1,4 @@
 
-
-
 #include "rkdb_server.h"
 #include "rpc/this_handler.h"
 
@@ -15,7 +13,6 @@
 
 
 using namespace rapidjson;
-using namespace std;
 
 //initial db server
 RkdbServer::RkdbServer(int kyid)
@@ -99,14 +96,17 @@ string RkdbServer::GetProjectInfoList()
 
     Iterator* iterator = _db->NewIterator(ReadOptions(), _col_handles[COLUMN_PROJECT_INFO]);
 
+    int ii = 1;
     for (iterator->SeekToFirst(); iterator->Valid(); iterator->Next())
     {
-        Document d(kObjectType);
+        Value v(kObjectType);
+        Value vv(kStringType);
         Value key(kNumberType);
         key.SetInt64(*(long long *)iterator->key().data());
-        d.Parse(iterator->value().data());
-        d.AddMember("key", key, d.GetAllocator());
-        doc.PushBack(d, allocator);
+        vv.SetString(iterator->value().data(), allocator);
+        v.AddMember("key", key, allocator);
+        v.AddMember("value", vv, allocator);
+        doc.PushBack(v, allocator);
     }
     
     StringBuffer buffer;
@@ -137,9 +137,7 @@ long long RkdbServer::NewProjectInfo(string & value)
     Writer<StringBuffer> writer(buffer);
     doc.Accept(writer);
     Slice slvalue = buffer.GetString();
-    WriteOptions write_options;
-    write_options.sync = true ;
-    Status s = _db->Put(write_options, _col_handles[COLUMN_PROJECT_INFO], slkey, slvalue);
+    Status s = _db->Put(WriteOptions(), _col_handles[COLUMN_PROJECT_INFO], slkey, slvalue);
     assert(s.ok());
     return id;
 }
@@ -164,9 +162,7 @@ void RkdbServer::UpdateProjectInfo(long long & pid, string & value)
     Writer<StringBuffer> writer(buffer);
     doc.Accept(writer);
     Slice slvalue = buffer.GetString();
-    WriteOptions write_options;
-    write_options.sync = true ;
-    s = _db->Put(write_options, _col_handles[COLUMN_PROJECT_INFO], slkey, slvalue);
+    s = _db->Put(WriteOptions(), _col_handles[COLUMN_PROJECT_INFO], slkey, slvalue);
     assert(s.ok());
 }
 
@@ -178,9 +174,7 @@ void RkdbServer::DeleProject(long long & pid)
     rocksdb::Slice slkey((char *)&pid, 8);
     batch.Delete(_col_handles[COLUMN_PROJECT_INFO], slkey);
     batch.Delete(_col_handles[COLUMN_PROJECT], slkey);
-    WriteOptions write_options;
-    write_options.sync = true ;
-    Status s = _db->Write(write_options, &batch);
+    Status s = _db->Write(WriteOptions(), &batch);
     assert(s.ok());
 }
 
@@ -193,8 +187,6 @@ void RkdbServer::SaveProject(long long & pid, string & value)
     //record update time
     string v;
     auto ti = GetNow() + TIME_STARTPOINT;
-    WriteOptions write_options;
-    write_options.sync = true;
     WriteBatch batch;
 
     Status s = _db->Get(ReadOptions(), _col_handles[COLUMN_PROJECT_INFO], slkey, &v);
@@ -212,7 +204,7 @@ void RkdbServer::SaveProject(long long & pid, string & value)
     slvalue = value;
     batch.Put(_col_handles[COLUMN_PROJECT], slkey, slvalue);
 
-    s = _db->Write(write_options, &batch);
+    s = _db->Write(WriteOptions(), &batch);
     assert(s.ok());
 }
 

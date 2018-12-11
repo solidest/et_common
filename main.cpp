@@ -51,7 +51,11 @@ int test_dbserver()
 {
     RkdbServer db(254);
     string lp = db.GetProjectInfoList();
-    cout<<lp<<endl;
+
+    Document d;
+    d.Parse(lp.c_str());
+    int ic1 = d.Size();
+    cout<<"start: "<<lp<<endl;
 
     Document doc(kObjectType);
     doc.AddMember("name", "project name test", doc.GetAllocator());
@@ -73,15 +77,15 @@ int test_dbserver()
     string pjc = db.OpenProject(id);
     assert(pjcontent == pjc);
 
+    string ninfo = "new info";
+    db.UpdateProjectInfo(id, ninfo);
+
     lp = db.GetProjectInfoList();
+    d.Parse(lp.c_str());
+    int ic2 = d.Size();
+    assert((ic2-1)==ic1);
     cout<<lp<<endl;
     db.DeleProject(id);
-    
-    
-
-    //auto n = db.GetNow();
-    //for(int i=0; i<4099; i++)
-        //std::cout << db.GetNewId() << endl;
 }
 
 int main(int argc, const char * argv[]) {
