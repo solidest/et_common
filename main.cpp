@@ -55,8 +55,9 @@ int test_dbserver()
     Document d;
     d.Parse(lp.c_str());
     int ic1 = d.Size();
-    cout<<"start: "<<lp<<endl;
+    cout<<"pass1: "<<lp<<endl;
 
+    //new project info
     Document doc(kObjectType);
     doc.AddMember("name", "project name test", doc.GetAllocator());
     doc.AddMember("notes", "notes of project", doc.GetAllocator());
@@ -71,12 +72,18 @@ int test_dbserver()
     string strJson = buffer.GetString();
     auto id = db.NewProjectInfo(strJson);
    
+    //test save content
     string pjcontent("content of project");
     db.SaveProject(id, pjcontent);
-
     string pjc = db.OpenProject(id);
     assert(pjcontent == pjc);
+    string newc = "new content";
+    db.SaveProject(id, newc);
+    pjc = db.OpenProject(id);
+    assert(pjcontent != pjc);
+    cout<<"pass2: "<<pjc<<endl;
 
+    //test update info
     string ninfo = "new info";
     db.UpdateProjectInfo(id, ninfo);
 
@@ -84,7 +91,8 @@ int test_dbserver()
     d.Parse(lp.c_str());
     int ic2 = d.Size();
     assert((ic2-1)==ic1);
-    cout<<lp<<endl;
+    assert(lp.find(ninfo)>0);
+    cout<<"pass3: "<<lp<<endl;
     db.DeleProject(id);
 }
 

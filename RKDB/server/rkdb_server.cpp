@@ -125,7 +125,7 @@ long long RkdbServer::NewProjectInfo(string & value)
     Value vi(kNumberType);
     vi.SetInt64(ti);
     Value vs(kStringType);
-    vs.SetString(value.c_str(), value.length()+1);
+    vs.SetString(value.c_str(), value.size());
     Document doc(kObjectType);
     doc.AddMember(STR_CREATE_TIME, vi, doc.GetAllocator());
     doc.AddMember(STR_UPDATE_TIME, vi, doc.GetAllocator());
@@ -262,7 +262,7 @@ inline long long RkdbServer::GetNow()
 inline bool RkdbServer::CheckIsRunning()
 {
     if(!_is_runcase) return false;
-    auto err_obj = std::make_tuple(1, "One Case Is Running");
+    auto err_obj = std::make_tuple(ERR_CODE_ISRUNCASE, "One Case Is Running");
     rpc::this_handler().respond_error(err_obj);
     return true;
 }

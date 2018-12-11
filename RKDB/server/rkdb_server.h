@@ -34,6 +34,9 @@
 #define COLUMN_RUN_ASSERT   6
 #define COLUMN_RUN_INFO     7
 
+
+#define ERR_CODE_ISRUNCASE  1
+
 using namespace std::chrono;
 using namespace std;
 using namespace rocksdb;
