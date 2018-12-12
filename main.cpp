@@ -109,6 +109,8 @@ int test_start_dbserver()
         cout<<"pass1: "<<pl<<endl;
 
         auto id = c.call("NewProjectInfo", "test info").as<long long>();
+        auto ept = c.call("OpenProject", id).as<string>();
+        assert(ept.size() == 0);
         pl = c.call("GetProjectInfoList").as<string>();
         cout<<"pass2: "<<pl<<endl;
 
@@ -133,7 +135,9 @@ int test_start_dbserver()
     }
     catch (rpc::rpc_error &t)
     {
-        std::cout << t.what() << std::endl;
+        using err_t = std::tuple<int, std::string>;
+        auto err = t.get_error().as<err_t>();
+        std::cout << std::get<1>(err) << std::endl;
     }
 
     //cin.ignore();

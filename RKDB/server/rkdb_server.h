@@ -79,9 +79,7 @@ private:
 
     DB* _db;
     std::vector<ColumnFamilyHandle*> _col_handles;
-
     AtomicBool _is_runcase { false };
-    
     long long _time_diff;
     int _kyid;
     std::mutex _mtx;

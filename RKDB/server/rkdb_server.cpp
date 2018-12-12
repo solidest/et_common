@@ -143,7 +143,6 @@ string RkdbServer::GetProjectInfoList()
     ReadOptions ro;
     
     Iterator* iterator = _db->NewIterator(ReadOptions(), _col_handles[COLUMN_PROJECT_INFO]);
-
     for (iterator->SeekToFirst(); iterator->Valid(); iterator->Next())
     {
         Value v(kObjectType);
@@ -155,7 +154,6 @@ string RkdbServer::GetProjectInfoList()
         v.AddMember("value", val, allocator);
         doc.PushBack(v, allocator);
     }
-
     delete iterator;
     
     StringBuffer buffer;
@@ -359,7 +357,7 @@ inline long long RkdbServer::GetNewId()
     long long ret = (timestamp << 22) | ((_kyid & 0x3FF) << 12) | (__sequence & 0xFFF);
 
     __last_timestamp = timestamp;
-    
+
     _mtx.unlock();
 
     return ret;
