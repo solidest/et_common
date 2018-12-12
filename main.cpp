@@ -82,17 +82,20 @@ int test_dbserver()
     db.DeleProject(id);
 }
 
-void* _start_dbserver(void* args)
-{
-    RkdbServer db(1024, NULL);
-    rkdb_serv_start(db, "192.168.136.138", 8000);
-}
+// void* _start_dbserver(void* args)
+// {
+//     RkdbServer db(1024, NULL);
+//     rkdb_serv_start(db, "192.168.136.138", 8000);
+// }
 
 int test_start_dbserver()
 {
     //参数依次是：创建的线程id，线程参数，调用的函数，传入的函数参数
-    pthread_t pth;
-    int ret = pthread_create(&pth, NULL, _start_dbserver, NULL);
+    // pthread_t pth;
+    // int ret = pthread_create(&pth, NULL, _start_dbserver, NULL);
+
+    RkdbServer db(1024, NULL);
+    rkdb_serv_start(db, "192.168.136.138", 8000);
 
     sleep(1);
     rpc::client c("192.168.136.138", 8000);
@@ -104,6 +107,23 @@ int test_start_dbserver()
         c.set_timeout(short_timeout);
         auto pl = c.call("GetProjectInfoList").as<string>();
         cout<<"pass1: "<<pl<<endl;
+
+        auto id = c.call("NewProjectInfo", "test info").as<long long>();
+        pl = c.call("GetProjectInfoList").as<string>();
+        cout<<"pass2: "<<pl<<endl;
+
+        sleep(1);
+        string cont("content of project!!");
+        c.call("SaveProject", id, cont);
+        string cont2 = c.call("OpenProject", id).as<string>();
+        assert(cont == cont2);
+        pl = c.call("GetProjectInfoList").as<string>();
+        cout<<"pass3: "<<pl<<endl;
+        
+        c.call("DeleProject", id);
+        pl = c.call("GetProjectInfoList").as<string>();
+        cout<<"pass4: "<<pl<<endl;
+
     } 
     catch (rpc::timeout &t) 
     {
@@ -116,7 +136,10 @@ int test_start_dbserver()
         std::cout << t.what() << std::endl;
     }
 
-    pthread_exit(NULL);
+    //cin.ignore();
+
+    rkdb_serv_stop();
+
     return 0;
 }
 

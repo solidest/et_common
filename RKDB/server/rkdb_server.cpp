@@ -1,7 +1,10 @@
 
 #include <iostream>
 #include "rkdb_server.h"
+
 #include "rpc/this_handler.h"
+#include "rpc/server.h"
+#include "rpc/this_server.h"
 
 #include "rocksdb/slice.h"
 #include "rocksdb/options.h"
@@ -13,14 +16,17 @@
 #include "rapidjson/writer.h"
 
 
+
 using namespace rapidjson;
 
+static rpc::server* psrv;
 
 //db server start
 int rkdb_serv_start(RkdbServer& db, const char* serverip, unsigned short serverport)
 {
-    rpc::server srv(serverport); // listen on TCP port
-
+    //rpc::server srv(serverport); // listen on TCP port
+    psrv = new rpc::server(serverip, serverport);
+    
     // string GetProjectInfoList();
     // long long NewProjectInfo(string & value);
     // void UpdateProjectInfo(long long & pid, string & value);
@@ -28,18 +34,28 @@ int rkdb_serv_start(RkdbServer& db, const char* serverip, unsigned short serverp
     // string OpenProject(long long & pid);
     // void DeleProject(long long & pid);
 
-    srv.bind("GetProjectInfoList", [&db]()->string { return db.GetProjectInfoList(); });
-    srv.bind("NewProjectInfo", [&db](string & value)->long long { return db.NewProjectInfo(value); });
-    srv.bind("UpdateProjectInfo", [&db](long long & pid, string & value){ db.UpdateProjectInfo(pid, value); });
-    srv.bind("SaveProject", [&db](long long & pid, string & value){ db.SaveProject(pid, value); });
-    srv.bind("OpenProject", [&db](long long & pid)->string { return db.OpenProject(pid); });
-    srv.bind("DeleProject", [&db](long long & pid){ db.DeleProject(pid); });
+    psrv->bind("GetProjectInfoList", [&db]()->string { return db.GetProjectInfoList(); });
+    psrv->bind("NewProjectInfo", [&db](string & value)->long long { return db.NewProjectInfo(value); });
+    psrv->bind("UpdateProjectInfo", [&db](long long & pid, string & value){ db.UpdateProjectInfo(pid, value); });
+    psrv->bind("SaveProject", [&db](long long & pid, string & value){ db.SaveProject(pid, value); });
+    psrv->bind("OpenProject", [&db](long long & pid)->string { return db.OpenProject(pid); });
+    psrv->bind("DeleProject", [&db](long long & pid){ db.DeleProject(pid); });
 
-    srv.async_run(2);
-    std::cin.ignore();
+    psrv->async_run(2);
 
-    // NOTE: you have to make sure that the lifetime of foo_obj
-    // exceeds that of the server.
+    return 0;
+}
+
+int rkdb_serv_stop()
+{
+    if(psrv)
+    {
+        psrv->close_sessions();
+        psrv->stop();
+        delete psrv;
+        psrv = nullptr;
+    }
+
     return 0;
 }
 
@@ -159,11 +175,13 @@ long long RkdbServer::NewProjectInfo(string & value)
     auto ti = GetNow() + TIME_STARTPOINT;
     Value vi(kNumberType);
     vi.SetInt64(ti);
+    Value vi2(kNumberType);
+    vi2.SetInt64(ti);
     Value vs(kStringType);
     vs.SetString(value.c_str(), value.size());
     Document doc(kObjectType);
     doc.AddMember(STR_CREATE_TIME, vi, doc.GetAllocator());
-    doc.AddMember(STR_UPDATE_TIME, vi, doc.GetAllocator());
+    doc.AddMember(STR_UPDATE_TIME, vi2, doc.GetAllocator());
     doc.AddMember(STR_INFO_VALUE, vs, doc.GetAllocator());
 
     auto id = GetNewId();

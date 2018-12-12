@@ -17,7 +17,6 @@
 #include <mutex>
 #include <unistd.h>
 
-#include "rpc/server.h"
 #include "rocksdb/db.h"
 
 #define TIME_STARTPOINT 1514736000000    //2018-01-01 00:00:00.000
@@ -91,6 +90,7 @@ private:
 
 
 int rkdb_serv_start(RkdbServer& db, const char* serverip, unsigned short serverport);
+int rkdb_serv_stop();
 
 
 #endif /* !RKDB_SERVER_H_ */
