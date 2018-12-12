@@ -11,6 +11,9 @@
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
 
+#include "rpc/client.h"
+#include "rpc/rpc_error.h"
+
 
 using namespace std;
 using namespace rapidjson;
@@ -29,27 +32,10 @@ int test_logserver()
     rklog_serv_start("192.168.136.138", 5000, "rklog");  
 }
 
-// int test_dbserver()
-// {
-//     //test connect
-//     // start_dbserver("192.168136.138", 8000, 10);
-//     // rkcpc_open(10);
-//     // const char * msg2 = "test message";
-//     // for(int i=0; i<10; i++)
-//     // {
-//     //     int conn = rkcpc_getid("192.168136.138", 8000);
-//     //     int ret = rkcpc_call(conn, 0, msg2, 7);
-//     //     printf("result = %d\n", ret);
-//     //     char buf[7];
-//     //     ret = rkcpc_pcall(conn, 0, msg2, 7, buf, 7);
-//     //     assert(ret == 7);
-//     //     printf("result = %s\n", buf);
-//     // }
-// }
 
 int test_dbserver()
 {
-    RkdbServer db(254);
+    RkdbServer db(254, NULL);
     string lp = db.GetProjectInfoList();
 
     Document d;
@@ -96,11 +82,51 @@ int test_dbserver()
     db.DeleProject(id);
 }
 
+void* _start_dbserver(void* args)
+{
+    RkdbServer db(1024, NULL);
+    rkdb_serv_start(db, "192.168.136.138", 8000);
+}
+
+int test_start_dbserver()
+{
+    //参数依次是：创建的线程id，线程参数，调用的函数，传入的函数参数
+    pthread_t pth;
+    int ret = pthread_create(&pth, NULL, _start_dbserver, NULL);
+
+    sleep(1);
+    rpc::client c("192.168.136.138", 8000);
+
+    try 
+    {
+        // default timeout is 5000 milliseconds
+        const uint64_t short_timeout = 5000;
+        c.set_timeout(short_timeout);
+        auto pl = c.call("GetProjectInfoList").as<string>();
+        cout<<"pass1: "<<pl<<endl;
+    } 
+    catch (rpc::timeout &t) 
+    {
+        // will display a message like
+        // rpc::timeout: Timeout of 50ms while calling RPC function 'sleep'
+        std::cout << t.what() << std::endl;
+    }
+    catch (rpc::rpc_error &t)
+    {
+        std::cout << t.what() << std::endl;
+    }
+
+    pthread_exit(NULL);
+    return 0;
+}
+
 int main(int argc, const char * argv[]) {
     
     int ret = 0;
-    cout<<endl<<"<<<<<<<<<<<<<<<<<<<  begin test  >>>>>>>>>>>>>>>>>>>"<<endl<<endl;  
-    test_dbserver();
+    cout<<endl<<"<<<<<<<<<<<<<<<<<<<  begin test  >>>>>>>>>>>>>>>>>>>"<<endl<<endl;
+    test_start_dbserver();
+
+    //test_dbserver();
     //start_logclient();  
     //ret = test_logserver();
 

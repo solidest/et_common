@@ -1,4 +1,5 @@
 
+#include <iostream>
 #include "rkdb_server.h"
 #include "rpc/this_handler.h"
 
@@ -14,16 +15,45 @@
 
 using namespace rapidjson;
 
+
+//db server start
+int rkdb_serv_start(RkdbServer& db, const char* serverip, unsigned short serverport)
+{
+    rpc::server srv(serverport); // listen on TCP port
+
+    // string GetProjectInfoList();
+    // long long NewProjectInfo(string & value);
+    // void UpdateProjectInfo(long long & pid, string & value);
+    // void SaveProject(long long & pid, string & vlaue);
+    // string OpenProject(long long & pid);
+    // void DeleProject(long long & pid);
+
+    srv.bind("GetProjectInfoList", [&db]()->string { return db.GetProjectInfoList(); });
+    srv.bind("NewProjectInfo", [&db](string & value)->long long { return db.NewProjectInfo(value); });
+    srv.bind("UpdateProjectInfo", [&db](long long & pid, string & value){ db.UpdateProjectInfo(pid, value); });
+    srv.bind("SaveProject", [&db](long long & pid, string & value){ db.SaveProject(pid, value); });
+    srv.bind("OpenProject", [&db](long long & pid)->string { return db.OpenProject(pid); });
+    srv.bind("DeleProject", [&db](long long & pid){ db.DeleProject(pid); });
+
+    srv.async_run(2);
+    std::cin.ignore();
+
+    // NOTE: you have to make sure that the lifetime of foo_obj
+    // exceeds that of the server.
+    return 0;
+}
+
+
 //initial db server
-RkdbServer::RkdbServer(int kyid)
+RkdbServer::RkdbServer(int kyid, const char* dbfile)
 {
     _kyid = kyid;
     microClock_type1 tp1 = time_point_cast<milliseconds>(system_clock::now());
     microClock_type2 tp2 = time_point_cast<milliseconds>(steady_clock::now()); 
     _time_diff = tp1.time_since_epoch().count() - tp2.time_since_epoch().count() - TIME_STARTPOINT; 
 
-    string kDBPath = DB_FILE;
-    if(!existsFile(DB_FILE))
+    string kDBPath = dbfile == NULL ? DB_FILE : dbfile;
+    if(!existsFile(kDBPath.c_str()))
     {
         Options options;
         options.create_if_missing = true;
@@ -295,7 +325,7 @@ inline long long RkdbServer::GetNewId()
         _sequence = (_sequence+1) & 4095;
         if (0 == _sequence) timestamp = tilNextMillis(_last_timestamp);
     }
-    else 
+    else
     {
         _sequence = 0;
     }
