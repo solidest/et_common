@@ -55,11 +55,11 @@ public:
     ~RkdbServer();
 
     string GetProjectInfoList();
-    long long NewProjectInfo(string & value);
-    void UpdateProjectInfo(long long & pid, string & value);
-    void SaveProject(long long & pid, string & vlaue);
-    string OpenProject(long long & pid);
-    void DeleProject(long long & pid);
+    long long NewProjectInfo(string const & value);
+    void UpdateProjectInfo(long long const & pid, string const & value);
+    void SaveProject(long long const & pid, string const & vlaue);
+    string OpenProject(long long const & pid);
+    void DeleProject(long long const & pid);
 
     // long long StartRunCase(long long & pid, long long & caseid);
     // void SaveIO(long long & rid, string & value);

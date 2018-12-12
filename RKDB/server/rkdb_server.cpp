@@ -35,11 +35,11 @@ int rkdb_serv_start(RkdbServer& db, const char* serverip, unsigned short serverp
     // void DeleProject(long long & pid);
 
     psrv->bind("GetProjectInfoList", [&db]()->string { return db.GetProjectInfoList(); });
-    psrv->bind("NewProjectInfo", [&db](string & value)->long long { return db.NewProjectInfo(value); });
-    psrv->bind("UpdateProjectInfo", [&db](long long & pid, string & value){ db.UpdateProjectInfo(pid, value); });
-    psrv->bind("SaveProject", [&db](long long & pid, string & value){ db.SaveProject(pid, value); });
-    psrv->bind("OpenProject", [&db](long long & pid)->string { return db.OpenProject(pid); });
-    psrv->bind("DeleProject", [&db](long long & pid){ db.DeleProject(pid); });
+    psrv->bind("NewProjectInfo", [&db](string const & value)->long long { return db.NewProjectInfo(value); });
+    psrv->bind("UpdateProjectInfo", [&db](long long const & pid, string const & value){ db.UpdateProjectInfo(pid, value); });
+    psrv->bind("SaveProject", [&db](long long const & pid, string const & value){ db.SaveProject(pid, value); });
+    psrv->bind("OpenProject", [&db](long long const & pid)->string { return db.OpenProject(pid); });
+    psrv->bind("DeleProject", [&db](long long const & pid){ db.DeleProject(pid); });
 
     psrv->async_run(2);
 
@@ -168,7 +168,7 @@ string RkdbServer::GetProjectInfoList()
 
 
 //new project file
-long long RkdbServer::NewProjectInfo(string & value)
+long long RkdbServer::NewProjectInfo(string const & value)
 {
     if(CheckIsRunning()) return 0;
 
@@ -198,7 +198,7 @@ long long RkdbServer::NewProjectInfo(string & value)
 }
 
 //update project info
-void RkdbServer::UpdateProjectInfo(long long & pid, string & value)
+void RkdbServer::UpdateProjectInfo(long long const & pid, string const & value)
 {
     if(CheckIsRunning()) return;
 
@@ -224,7 +224,7 @@ void RkdbServer::UpdateProjectInfo(long long & pid, string & value)
 }
 
 //delete one project
-void RkdbServer::DeleProject(long long & pid)
+void RkdbServer::DeleProject(long long const & pid)
 {
     if(CheckIsRunning()) return; 
     WriteBatch batch;
@@ -238,7 +238,7 @@ void RkdbServer::DeleProject(long long & pid)
 }
 
 //save project content
-void RkdbServer::SaveProject(long long & pid, string & value)
+void RkdbServer::SaveProject(long long const & pid, string const & value)
 {
     if(CheckIsRunning()) return;
     char sid[20] = { 0 };
@@ -270,7 +270,7 @@ void RkdbServer::SaveProject(long long & pid, string & value)
 }
 
 //get project content
-string RkdbServer::OpenProject(long long & pid)
+string RkdbServer::OpenProject(long long const & pid)
 {
     string ret;
     char sid[20] = { 0 };
