@@ -36,10 +36,10 @@ int rkdb_serv_start(RkdbServer& db, const char* serverip, unsigned short serverp
 
     psrv->bind("GetProjectInfoList", [&db]()->string { return db.GetProjectInfoList(); });
     psrv->bind("NewProjectInfo", [&db](string const & value)->long long { return db.NewProjectInfo(value); });
-    psrv->bind("UpdateProjectInfo", [&db](long long const & pid, string const & value){ db.UpdateProjectInfo(pid, value); });
-    psrv->bind("SaveProject", [&db](long long const & pid, string const & value){ db.SaveProject(pid, value); });
-    psrv->bind("OpenProject", [&db](long long const & pid)->string { return db.OpenProject(pid); });
-    psrv->bind("DeleProject", [&db](long long const & pid){ db.DeleProject(pid); });
+    psrv->bind("SetProjectInfo", [&db](long long const & pid, string const & value){ db.SetProjectInfo(pid, value); });
+    psrv->bind("SetProject", [&db](long long const & pid, string const & value){ db.SetProject(pid, value); });
+    psrv->bind("GetProject", [&db](long long const & pid)->string { return db.GetProject(pid); });
+    psrv->bind("DelProject", [&db](long long const & pid){ db.DelProject(pid); });
 
     psrv->async_run(2);
 
@@ -136,7 +136,7 @@ RkdbServer::~RkdbServer()
 //get all project info
 string RkdbServer::GetProjectInfoList()
 {
-    if(CheckIsRunning()) return 0;
+    if(isRunningCase()) return 0;
     Document doc(kArrayType);
     Document::AllocatorType& allocator = doc.GetAllocator();
 
@@ -168,9 +168,9 @@ string RkdbServer::GetProjectInfoList()
 //new project file
 long long RkdbServer::NewProjectInfo(string const & value)
 {
-    if(CheckIsRunning()) return 0;
+    if(isRunningCase()) return 0;
 
-    auto ti = GetNow() + TIME_STARTPOINT;
+    auto ti = getNow() + TIME_STARTPOINT;
     Value vi(kNumberType);
     vi.SetInt64(ti);
     Value vi2(kNumberType);
@@ -182,7 +182,7 @@ long long RkdbServer::NewProjectInfo(string const & value)
     doc.AddMember(STR_UPDATE_TIME, vi2, doc.GetAllocator());
     doc.AddMember(STR_INFO_VALUE, vs, doc.GetAllocator());
 
-    auto id = GetNewId();
+    auto id = getNewId();
     char sid[20] = { 0 };
     sprintf(sid, "%019lld", id);
     Slice slkey = sid;
@@ -202,12 +202,12 @@ long long RkdbServer::NewProjectInfo(string const & value)
 }
 
 //update project info
-void RkdbServer::UpdateProjectInfo(long long const & pid, string const & value)
+void RkdbServer::SetProjectInfo(long long const & pid, string const & value)
 {
-    if(CheckIsRunning()) return;
+    if(isRunningCase()) return;
 
     string v;
-    long long ti = GetNow() + TIME_STARTPOINT;
+    long long ti = getNow() + TIME_STARTPOINT;
     char sid[20] = { 0 };
     sprintf(sid, "%019lld", pid);
     Slice slkey = sid;
@@ -228,9 +228,9 @@ void RkdbServer::UpdateProjectInfo(long long const & pid, string const & value)
 }
 
 //delete one project
-void RkdbServer::DeleProject(long long const & pid)
+void RkdbServer::DelProject(long long const & pid)
 {
-    if(CheckIsRunning()) return; 
+    if(isRunningCase()) return; 
     WriteBatch batch;
     char sid[20] = { 0 };
     sprintf(sid, "%019lld", pid);
@@ -242,16 +242,16 @@ void RkdbServer::DeleProject(long long const & pid)
 }
 
 //save project content
-void RkdbServer::SaveProject(long long const & pid, string const & value)
+void RkdbServer::SetProject(long long const & pid, string const & value)
 {
-    if(CheckIsRunning()) return;
+    if(isRunningCase()) return;
     char sid[20] = { 0 };
     sprintf(sid, "%019lld", pid);
     Slice slkey = sid;
 
     //record update time
     string v;
-    auto ti = GetNow() + TIME_STARTPOINT;
+    auto ti = getNow() + TIME_STARTPOINT;
     WriteBatch batch;
 
     Status s = _db->Get(ReadOptions(), _col_handles[COLUMN_PROJECT_INFO], slkey, &v);
@@ -274,7 +274,7 @@ void RkdbServer::SaveProject(long long const & pid, string const & value)
 }
 
 //get project content
-string RkdbServer::OpenProject(long long const & pid)
+string RkdbServer::GetProject(long long const & pid)
 {
     string ret;
     char sid[20] = { 0 };
@@ -307,18 +307,18 @@ string RkdbServer::OpenProject(long long const & pid)
 
 
 //id is full in one millis
-inline long long RkdbServer::tilNextMillis(long long lastTimestamp)
+inline long long RkdbServer::tillNextMillis(long long lastTimestamp)
 {
-    long long timestamp = GetNow();
+    long long timestamp = getNow();
     while (timestamp == lastTimestamp) {
-        timestamp = GetNow();
+        timestamp = getNow();
     }
     return timestamp;
 }
 
 
 //get now time tick
-inline long long RkdbServer::GetNow()
+inline long long RkdbServer::getNow()
 {
     microClock_type2 tp = time_point_cast<milliseconds>(steady_clock::now()); 
     long long ret = tp.time_since_epoch().count() + _time_diff;
@@ -326,7 +326,7 @@ inline long long RkdbServer::GetNow()
 }
 
 //check is server idle
-inline bool RkdbServer::CheckIsRunning()
+inline bool RkdbServer::isRunningCase()
 {
     if(!_is_runcase) return false;
     auto err_obj = std::make_tuple(ERR_CODE_ISRUNCASE, "One Case Is Running");
@@ -336,18 +336,18 @@ inline bool RkdbServer::CheckIsRunning()
 
 
 //get a new id
-inline long long RkdbServer::GetNewId()
+inline long long RkdbServer::getNewId()
 {
     static long long __last_timestamp = 0;
     static int __sequence = 0;
-    long long timestamp = GetNow();
+    long long timestamp = getNow();
 
     _mtx.lock();
 
     if (__last_timestamp == timestamp) 
     {
         __sequence = (__sequence+1) & 4095;
-        if (0 == __sequence) timestamp = tilNextMillis(__last_timestamp);
+        if (0 == __sequence) timestamp = tillNextMillis(__last_timestamp);
     }
     else
     {

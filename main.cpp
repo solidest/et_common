@@ -60,18 +60,18 @@ int test_dbserver()
    
     //test save content
     string pjcontent("content of project");
-    db.SaveProject(id, pjcontent);
-    string pjc = db.OpenProject(id);
+    db.SetProject(id, pjcontent);
+    string pjc = db.GetProject(id);
     assert(pjcontent == pjc);
     string newc = "new content";
-    db.SaveProject(id, newc);
-    pjc = db.OpenProject(id);
+    db.SetProject(id, newc);
+    pjc = db.GetProject(id);
     assert(pjcontent != pjc);
     cout<<"pass2: "<<pjc<<endl;
 
     //test update info
     string ninfo = "new info";
-    db.UpdateProjectInfo(id, ninfo);
+    db.SetProjectInfo(id, ninfo);
 
     lp = db.GetProjectInfoList();
     d.Parse(lp.c_str());
@@ -79,7 +79,7 @@ int test_dbserver()
     assert((ic2-1)==ic1);
     assert(lp.find(ninfo)>0);
     cout<<"pass3: "<<lp<<endl;
-    db.DeleProject(id);
+    db.DelProject(id);
 }
 
 // void* _start_dbserver(void* args)
@@ -109,20 +109,20 @@ int test_start_dbserver()
         cout<<"pass1: "<<pl<<endl;
 
         auto id = c.call("NewProjectInfo", "test info").as<long long>();
-        auto ept = c.call("OpenProject", id).as<string>();
+        auto ept = c.call("GetProject", id).as<string>();
         assert(ept.size() == 0);
         pl = c.call("GetProjectInfoList").as<string>();
         cout<<"pass2: "<<pl<<endl;
 
         sleep(1);
         string cont("content of project!!");
-        c.call("SaveProject", id, cont);
-        string cont2 = c.call("OpenProject", id).as<string>();
+        c.call("SetProject", id, cont);
+        string cont2 = c.call("GetProject", id).as<string>();
         assert(cont == cont2);
         pl = c.call("GetProjectInfoList").as<string>();
         cout<<"pass3: "<<pl<<endl;
         
-        c.call("DeleProject", id);
+        c.call("DelProject", id);
         pl = c.call("GetProjectInfoList").as<string>();
         cout<<"pass4: "<<pl<<endl;
 

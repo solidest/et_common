@@ -56,10 +56,10 @@ public:
 
     string GetProjectInfoList();
     long long NewProjectInfo(string const & value);
-    void UpdateProjectInfo(long long const & pid, string const & value);
-    void SaveProject(long long const & pid, string const & vlaue);
-    string OpenProject(long long const & pid);
-    void DeleProject(long long const & pid);
+    void SetProjectInfo(long long const & pid, string const & value);
+    void SetProject(long long const & pid, string const & vlaue);
+    string GetProject(long long const & pid);
+    void DelProject(long long const & pid);
 
     // long long StartRunCase(long long & pid, long long & caseid);
     // void SaveIO(long long & rid, string & value);
@@ -68,10 +68,10 @@ public:
     // void StopRunCase();
 
 private:
-    inline bool CheckIsRunning();
-    inline long long GetNow();
-    inline long long GetNewId();
-    inline long long tilNextMillis(long long lastTimestamp);
+    inline bool isRunningCase();
+    inline long long getNow();
+    inline long long getNewId();
+    inline long long tillNextMillis(long long lastTimestamp);
     inline bool existsFile (const char* fileName) 
     {
         return (access(fileName, F_OK) != -1);
