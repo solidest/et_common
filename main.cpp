@@ -95,10 +95,10 @@ int test_start_dbserver()
     // int ret = pthread_create(&pth, NULL, _start_dbserver, NULL);
 
     RkdbServer db(1024, NULL);
-    rkdb_serv_start(db, "192.168.136.138", 8000);
+    rkdb_serv_start(db, "127.0.0.1", 8000);
 
     sleep(1);
-    rpc::client c("192.168.136.138", 8000);
+    rpc::client c("127.0.0.1", 8000);
 
     try 
     {

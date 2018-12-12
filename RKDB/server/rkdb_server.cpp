@@ -192,7 +192,13 @@ long long RkdbServer::NewProjectInfo(string const & value)
     Writer<StringBuffer> writer(buffer);
     doc.Accept(writer);
     Slice slvalue(buffer.GetString(), buffer.GetSize());
-    Status s = _db->Put(WriteOptions(), _col_handles[COLUMN_PROJECT_INFO], slkey, slvalue);
+    string empty("");
+    Slice slv = empty;
+
+    WriteBatch batch;
+    batch.Put(_col_handles[COLUMN_PROJECT_INFO], slkey, slvalue);
+    batch.Put(_col_handles[COLUMN_PROJECT], slkey, slv);
+    Status s = _db->Write(WriteOptions(), &batch);
     assert(s.ok());
     return id;
 }
@@ -334,23 +340,26 @@ inline bool RkdbServer::CheckIsRunning()
 //get a new id
 inline long long RkdbServer::GetNewId()
 {
-    AtomicInt64 timestamp{ 0 };
-    timestamp = GetNow();
+    static long long __last_timestamp = 0;
+    static int __sequence = 0;
+    long long timestamp = GetNow();
 
     _mtx.lock();
-    if (_last_timestamp == timestamp) 
+
+    if (__last_timestamp == timestamp) 
     {
-        _sequence = (_sequence+1) & 4095;
-        if (0 == _sequence) timestamp = tilNextMillis(_last_timestamp);
+        __sequence = (__sequence+1) & 4095;
+        if (0 == __sequence) timestamp = tilNextMillis(__last_timestamp);
     }
     else
     {
-        _sequence = 0;
+        __sequence = 0;
     }
 
-    long long ret = (timestamp << 22) | ((_kyid & 0x3FF) << 12) | (_sequence & 0xFFF);
+    long long ret = (timestamp << 22) | ((_kyid & 0x3FF) << 12) | (__sequence & 0xFFF);
 
-    _last_timestamp = timestamp.load();
+    __last_timestamp = timestamp;
+    
     _mtx.unlock();
 
     return ret;

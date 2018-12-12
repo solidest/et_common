@@ -5,7 +5,7 @@
 ** Login   <>
 **
 ** Started on  undefined Dec 9 6:49:34 PM 2018 header_template
-** Last update Wed Dec 11 5:58:31 PM 2018 header_template
+** Last update Thu Dec 12 2:30:34 AM 2018 solidest
 */
 
 #ifndef RKDB_SERVER_H_
@@ -21,7 +21,7 @@
 
 #define TIME_STARTPOINT 1514736000000    //2018-01-01 00:00:00.000
 
-#define DB_FILE "/home/byx/et/db_data"
+#define DB_FILE "/home/solidest/et/db_data"
 #define STR_CREATE_TIME "CreateTime"
 #define STR_UPDATE_TIME "UpdateTime"
 #define STR_INFO_VALUE "ProjectInfo"
@@ -81,8 +81,7 @@ private:
     std::vector<ColumnFamilyHandle*> _col_handles;
 
     AtomicBool _is_runcase { false };
-    AtomicInt64 _last_timestamp { 0 };
-    AtomicInt _sequence { 0 };
+    
     long long _time_diff;
     int _kyid;
     std::mutex _mtx;
