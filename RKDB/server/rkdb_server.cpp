@@ -16,7 +16,6 @@
 #include "rapidjson/writer.h"
 
 
-
 using namespace rapidjson;
 
 static rpc::server* psrv;
@@ -27,19 +26,12 @@ int rkdb_serv_start(RkdbServer& db, const char* serverip, unsigned short serverp
     //rpc::server srv(serverport); // listen on TCP port
     psrv = new rpc::server(serverip, serverport);
     
-    // string GetProjectInfoList();
-    // long long NewProjectInfo(string & value);
-    // void UpdateProjectInfo(long long & pid, string & value);
-    // void SaveProject(long long & pid, string & vlaue);
-    // string OpenProject(long long & pid);
-    // void DeleProject(long long & pid);
-
     psrv->bind("GetProjectInfoList", [&db]()->string { return db.GetProjectInfoList(); });
     psrv->bind("NewProjectInfo", [&db](string const & value)->long long { return db.NewProjectInfo(value); });
-    psrv->bind("SetProjectInfo", [&db](long long const & pid, string const & value){ db.SetProjectInfo(pid, value); });
-    psrv->bind("SetProject", [&db](long long const & pid, string const & value){ db.SetProject(pid, value); });
-    psrv->bind("GetProject", [&db](long long const & pid)->string { return db.GetProject(pid); });
-    psrv->bind("DelProject", [&db](long long const & pid){ db.DelProject(pid); });
+    psrv->bind("SetProjectInfo", [&db](long long pid, string const & value){ db.SetProjectInfo(pid, value); });
+    psrv->bind("SetProject", [&db](long long pid, string const & value){ db.SetProject(pid, value); });
+    psrv->bind("GetProject", [&db](long long pid)->string { return db.GetProject(pid); });
+    psrv->bind("DelProject", [&db](long long pid){ db.DelProject(pid); });
 
     psrv->async_run(2);
 
@@ -202,7 +194,7 @@ long long RkdbServer::NewProjectInfo(string const & value)
 }
 
 //update project info
-void RkdbServer::SetProjectInfo(long long const & pid, string const & value)
+void RkdbServer::SetProjectInfo(long long pid, string const & value)
 {
     if(isRunningCase()) return;
 
@@ -228,7 +220,7 @@ void RkdbServer::SetProjectInfo(long long const & pid, string const & value)
 }
 
 //delete one project
-void RkdbServer::DelProject(long long const & pid)
+void RkdbServer::DelProject(long long pid)
 {
     if(isRunningCase()) return; 
     WriteBatch batch;
@@ -242,7 +234,7 @@ void RkdbServer::DelProject(long long const & pid)
 }
 
 //save project content
-void RkdbServer::SetProject(long long const & pid, string const & value)
+void RkdbServer::SetProject(long long pid, string const & value)
 {
     if(isRunningCase()) return;
     char sid[20] = { 0 };
@@ -274,7 +266,7 @@ void RkdbServer::SetProject(long long const & pid, string const & value)
 }
 
 //get project content
-string RkdbServer::GetProject(long long const & pid)
+string RkdbServer::GetProject(long long pid)
 {
     string ret;
     char sid[20] = { 0 };
