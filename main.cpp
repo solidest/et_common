@@ -97,7 +97,7 @@ int test_start_dbserver()
     RkdbServer db(1024, NULL);
     rkdb_serv_start(db, "127.0.0.1", 8000);
 
-    sleep(1);
+    usleep(100000);
     rpc::client c("127.0.0.1", 8000);
 
     try 
@@ -114,11 +114,12 @@ int test_start_dbserver()
         pl = c.call("GetProjectInfoList").as<string>();
         cout<<"pass2: "<<pl<<endl;
 
-        sleep(1);
+        usleep(100000);
         string cont("content of project!!");
         c.call("SetProject", id, cont);
         string cont2 = c.call("GetProject", id).as<string>();
         assert(cont == cont2);
+        c.call("SetProjectInfo", id, "test new info");
         pl = c.call("GetProjectInfoList").as<string>();
         cout<<"pass3: "<<pl<<endl;
         
