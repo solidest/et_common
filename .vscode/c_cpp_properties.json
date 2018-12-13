@@ -3,7 +3,8 @@
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "/usr/include/nodejs/src"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
@@ -11,7 +12,6 @@
             "cppStandard": "c++17",
             "intelliSenseMode": "clang-x64"
         }
-
     ],
     "version": 4
 }

@@ -1,0 +1,1 @@
+cmd_Release/obj.target/rkdb_client.node := g++ -shared -pthread -rdynamic -m64  -Wl,-soname=rkdb_client.node -o Release/obj.target/rkdb_client.node -Wl,--start-group Release/obj.target/rkdb_client/rkdb_client.o -Wl,--end-group /home/byx/et/et_common/bin/librpc.a

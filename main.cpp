@@ -141,7 +141,7 @@ int test_start_dbserver()
         std::cout << std::get<1>(err) << std::endl;
     }
 
-    //cin.ignore();
+    cin.ignore();
 
     rkdb_serv_stop();
 
