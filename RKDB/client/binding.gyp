@@ -6,7 +6,7 @@
         '../../include'
       ],
       "libraries": [
-        '/home/byx/et/et_common/bin/librpc.a'
+        '../../../bin/librpc.a'
       ],
       "sources": [ "rkdb_client.cc" ],
       'cflags!': [ '-fno-exceptions' ],

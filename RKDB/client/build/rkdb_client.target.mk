@@ -113,7 +113,7 @@ LDFLAGS_Release := \
 	-m64
 
 LIBS := \
-	/home/byx/et/et_common/bin/librpc.a
+	../../../bin/librpc.a
 
 $(obj).target/rkdb_client.node: GYP_LDFLAGS := $(LDFLAGS_$(BUILDTYPE))
 $(obj).target/rkdb_client.node: LIBS := $(LIBS)

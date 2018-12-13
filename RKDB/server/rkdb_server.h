@@ -5,7 +5,7 @@
 ** Login   <>
 **
 ** Started on  undefined Dec 9 6:49:34 PM 2018 header_template
-** Last update Thu Dec 12 5:15:01 PM 2018 header_template
+** Last update Fri Dec 13 3:57:11 AM 2018 solidest
 */
 
 #ifndef RKDB_SERVER_H_
@@ -21,7 +21,7 @@
 
 #define TIME_STARTPOINT 1514736000000    //2018-01-01 00:00:00.000
 
-#define DB_FILE "/home/byx/et/db_data"
+#define DB_FILE "/home/solidest/et/db_data"
 #define STR_CREATE_TIME "CreateTime"
 #define STR_UPDATE_TIME "UpdateTime"
 #define STR_INFO_VALUE "ProjectInfo"

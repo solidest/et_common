@@ -34,7 +34,7 @@ napi_value GetProjectInfoList(napi_env env, napi_callback_info info)
   auto pl = c.call("GetProjectInfoList").as<string>();
 
   napi_value ret;
-  napi_status status = napi_create_string_utf8(env, "test!", 5,/*pl.c_str(), pl.size()*/ &ret);
+  napi_status status = napi_create_string_utf8(env, pl.c_str(), pl.size(), &ret);
   assert(status == napi_ok);
   return ret;
 }

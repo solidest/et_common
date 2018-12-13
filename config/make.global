@@ -8,7 +8,7 @@ MAKEFLAG := -s --no-print-directory
 CC := g++
 
 # include path
-INCLUDE_PATH := /home/byx/et/et_common/include
+INCLUDE_PATH := /home/solidest/et/et_common/include
 
 # compile flags
 CCFLAG := -g
