@@ -1,61 +1,254 @@
 
-#include <node_api.h>
+
 #include <assert.h>
 #include <string>
 
+#include "napi.h"
 #include "rpc/client.h"
 #include "rpc/rpc_error.h"
 
+
 using namespace std;
 
+static rpc::client * __c;
+
+Napi::Value OpenRkdb(const Napi::CallbackInfo& info) 
+{
+    Napi::Env env = info.Env();
+    if (info.Length() < 2)
+    {
+        Napi::TypeError::New(env, "Wrong number of arguments").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    if (!info[0].IsString() || !info[1].IsNumber())
+    {
+        Napi::TypeError::New(env, "Wrong arguments").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    auto ip = info[0].As<Napi::String>().Utf8Value();
+    auto port = info[1].As<Napi::Number>().Int32Value();
+    __c = new rpc::client(ip, port);
+
+    return env.Null();
+}
+
+Napi::Value CloseRkdb(const Napi::CallbackInfo& info)
+{
+    Napi::Env env = info.Env();
+    if(__c)
+    {
+        delete __c;
+    }
+    return env.Null();
+}
+
 // string GetProjectInfoList();
+Napi::Value GetProjectInfoList(const Napi::CallbackInfo& info)
+{
+    Napi::Env env = info.Env();
+    try
+    {
+        auto pl = __c->call("GetProjectInfoList").as<string>();
+        Napi::String ret = Napi::String::New(env, pl);
+        return ret;
+    }
+    catch (rpc::timeout &t) 
+    {
+        Napi::TypeError::New(env, "Timeout when call rkdbserver").ThrowAsJavaScriptException();
+    }
+    catch (rpc::rpc_error &t)
+    {
+        using err_t = std::tuple<int, std::string>;
+        auto err = t.get_error().as<err_t>();
+        Napi::TypeError::New(env, std::get<1>(err)).ThrowAsJavaScriptException();
+    }
+    return env.Null();
+}
+
 // long long NewProjectInfo(string const & value);
-// void SetProjectInfo(long long pid, string const & value);
-// void SetProject(long long pid, string const & vlaue);
-// string GetProject(long long pid);
+Napi::Value NewProjectInfo(const Napi::CallbackInfo& info)
+{
+    Napi::Env env = info.Env();
+    try
+    {
+        if (info.Length() < 1)
+        {
+            Napi::TypeError::New(env, "Wrong number of arguments").ThrowAsJavaScriptException();
+        }
+
+        if (!info[0].IsString())
+        {
+            Napi::TypeError::New(env, "Wrong arguments").ThrowAsJavaScriptException();
+        }
+        auto pjinfo = info[0].As<Napi::String>().Utf8Value();
+        auto id = __c->call("NewProjectInfo", pjinfo).as<long long>();
+        Napi::Number ret = Napi::Number::New(env, id);
+        return ret;
+    }
+    catch (rpc::timeout &t) 
+    {
+        Napi::TypeError::New(env, "Timeout when call rkdbserver").ThrowAsJavaScriptException();
+    }
+    catch (rpc::rpc_error &t)
+    {
+        using err_t = std::tuple<int, std::string>;
+        auto err = t.get_error().as<err_t>();
+        Napi::TypeError::New(env, std::get<1>(err)).ThrowAsJavaScriptException();
+    }
+    return env.Null();
+}
+
 // void DelProject(long long pid);
-//static rpc::client *__c;
-
-napi_value OpenRkdb(napi_env env, napi_callback_info info) 
+Napi::Value DelProject(const Napi::CallbackInfo& info)
 {
-    return nullptr;
+    Napi::Env env = info.Env();
+    try
+    {
+        if (info.Length() < 1)
+        {
+            Napi::TypeError::New(env, "Wrong number of arguments").ThrowAsJavaScriptException();
+            return env.Null();
+        }
+
+        if (!info[0].IsNumber())
+        {
+            Napi::TypeError::New(env, "Wrong arguments").ThrowAsJavaScriptException();
+            return env.Null();
+        }
+        auto id = info[0].As<Napi::Number>().Int64Value();
+        __c->call("DelProject", id);
+    }
+    catch (rpc::timeout &t) 
+    {
+        Napi::TypeError::New(env, "Timeout when call rkdbserver").ThrowAsJavaScriptException();
+    }
+    catch (rpc::rpc_error &t)
+    {
+        using err_t = std::tuple<int, std::string>;
+        auto err = t.get_error().as<err_t>();
+        Napi::TypeError::New(env, std::get<1>(err)).ThrowAsJavaScriptException();
+    }
+    return env.Null();
 }
 
-napi_value CloseRkdb(napi_env env, napi_callback_info info) 
+// void SetProjectInfo(long long pid, string const & value);
+Napi::Value SetProjectInfo(const Napi::CallbackInfo& info)
 {
-    return nullptr;
+    Napi::Env env = info.Env();
+    try
+    {
+        if (info.Length() < 2)
+        {
+            Napi::TypeError::New(env, "Wrong number of arguments").ThrowAsJavaScriptException();
+            return env.Null();
+        }
+
+        if (!info[0].IsNumber() || !info[1].IsString())
+        {
+            Napi::TypeError::New(env, "Wrong arguments").ThrowAsJavaScriptException();
+            return env.Null();
+        }
+        auto id = info[0].As<Napi::Number>().Int64Value();
+        auto pinfo = info[1].As<Napi::String>().Utf8Value();
+        __c->call("SetProjectInfo", id, pinfo);
+    }
+    catch (rpc::timeout &t) 
+    {
+        Napi::TypeError::New(env, "Timeout when call rkdbserver").ThrowAsJavaScriptException();
+    }
+    catch (rpc::rpc_error &t)
+    {
+        using err_t = std::tuple<int, std::string>;
+        auto err = t.get_error().as<err_t>();
+        Napi::TypeError::New(env, std::get<1>(err)).ThrowAsJavaScriptException();
+    }
+    return env.Null();
 }
 
-
-napi_value GetProjectInfoList(napi_env env, napi_callback_info info) 
+// void SetProject(long long pid, string const & vlaue);
+Napi::Value SetProject(const Napi::CallbackInfo& info)
 {
-  rpc::client c("127.0.0.1", 8000);
+    Napi::Env env = info.Env();
+    try
+    {
+        if (info.Length() < 2)
+        {
+            Napi::TypeError::New(env, "Wrong number of arguments").ThrowAsJavaScriptException();
+            return env.Null();
+        }
 
-  auto pl = c.call("GetProjectInfoList").as<string>();
-
-  napi_value ret;
-  napi_status status = napi_create_string_utf8(env, pl.c_str(), pl.size(), &ret);
-  assert(status == napi_ok);
-  return ret;
+        if (!info[0].IsNumber() || !info[1].IsString())
+        {
+            Napi::TypeError::New(env, "Wrong arguments").ThrowAsJavaScriptException();
+            return env.Null();
+        }
+        auto id = info[0].As<Napi::Number>().Int64Value();
+        auto pinfo = info[1].As<Napi::String>().Utf8Value();
+        __c->call("SetProject", id, pinfo);
+    }
+    catch (rpc::timeout &t) 
+    {
+        Napi::TypeError::New(env, "Timeout when call rkdbserver").ThrowAsJavaScriptException();
+    }
+    catch (rpc::rpc_error &t)
+    {
+        using err_t = std::tuple<int, std::string>;
+        auto err = t.get_error().as<err_t>();
+        Napi::TypeError::New(env, std::get<1>(err)).ThrowAsJavaScriptException();
+    }
+    return env.Null();
 }
 
-napi_value NewProjectInfo(napi_env env, napi_callback_info info) 
+// string GetProject(long long pid);
+Napi::Value GetProject(const Napi::CallbackInfo& info)
 {
-  return nullptr;
+    Napi::Env env = info.Env();
+    try
+    {
+        if (info.Length() < 1)
+        {
+            Napi::TypeError::New(env, "Wrong number of arguments").ThrowAsJavaScriptException();
+            return env.Null();
+        }
+
+        if (!info[0].IsNumber())
+        {
+            Napi::TypeError::New(env, "Wrong arguments").ThrowAsJavaScriptException();
+            return env.Null();
+        }
+        auto id = info[0].As<Napi::Number>().Int64Value();
+        auto pj = __c->call("GetProject", id).as<string>();
+        Napi::String ret = Napi::String::New(env, pj);
+        return ret;
+    }
+    catch (rpc::timeout &t) 
+    {
+        Napi::TypeError::New(env, "Timeout when call rkdbserver").ThrowAsJavaScriptException();
+    }
+    catch (rpc::rpc_error &t)
+    {
+        using err_t = std::tuple<int, std::string>;
+        auto err = t.get_error().as<err_t>();
+        Napi::TypeError::New(env, std::get<1>(err)).ThrowAsJavaScriptException();
+    }
+    return env.Null();
 }
 
-#define DECLARE_NAPI_METHOD(name, func) { name, 0, func, 0, 0, 0, napi_default, 0 }
 
-napi_value Init(napi_env env, napi_value exports) {
-  napi_status status;
-  napi_property_descriptor desc[] = {
-      DECLARE_NAPI_METHOD("GetProjectInfoList", GetProjectInfoList),
-      DECLARE_NAPI_METHOD("NewProjectInfo", NewProjectInfo),
-  };
-  status =
-      napi_define_properties(env, exports, sizeof(desc) / sizeof(*desc), desc);
-  assert(status == napi_ok);
-  return exports;
+Napi::Object Init(Napi::Env env, Napi::Object exports) 
+{
+    exports.Set(Napi::String::New(env, "OpenRkdb"), Napi::Function::New(env, OpenRkdb));
+    exports.Set(Napi::String::New(env, "CloseRkdb"), Napi::Function::New(env, CloseRkdb));
+    exports.Set(Napi::String::New(env, "GetProjectInfoList"), Napi::Function::New(env, GetProjectInfoList));
+    exports.Set(Napi::String::New(env, "NewProjectInfo"), Napi::Function::New(env, NewProjectInfo));
+    exports.Set(Napi::String::New(env, "DelProject"), Napi::Function::New(env, DelProject));
+    exports.Set(Napi::String::New(env, "SetProjectInfo"), Napi::Function::New(env, SetProjectInfo));
+    exports.Set(Napi::String::New(env, "SetProject"), Napi::Function::New(env, SetProject));
+    exports.Set(Napi::String::New(env, "GetProject"), Napi::Function::New(env, GetProject));
+
+    return exports;
 }
 
-NAPI_MODULE(NODE_GYP_MODULE_NAME, Init)
+NODE_API_MODULE(addon, Init)

@@ -94,7 +94,7 @@ int test_start_dbserver()
     // pthread_t pth;
     // int ret = pthread_create(&pth, NULL, _start_dbserver, NULL);
 
-    RkdbServer db(1024, NULL);
+    RkdbServer db(1024, "/home/byx/et/db_data");
     rkdb_serv_start(db, "127.0.0.1", 8000);
 
     usleep(100000);

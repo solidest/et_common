@@ -60,12 +60,12 @@ RkdbServer::RkdbServer(int kyid, const char* dbfile)
     microClock_type2 tp2 = time_point_cast<milliseconds>(steady_clock::now()); 
     _time_diff = tp1.time_since_epoch().count() - tp2.time_since_epoch().count() - TIME_STARTPOINT; 
 
-    string kDBPath = dbfile == NULL ? DB_FILE : dbfile;
-    if(!existsFile(kDBPath.c_str()))
+    
+    if(!existsFile(dbfile))
     {
         Options options;
         options.create_if_missing = true;
-        Status s = DB::Open(options, kDBPath, &_db);
+        Status s = DB::Open(options, dbfile, &_db);
         assert(s.ok());
 
         // create column family
@@ -108,7 +108,7 @@ RkdbServer::RkdbServer(int kyid, const char* dbfile)
         column_families.push_back(ColumnFamilyDescriptor("run_assert", ColumnFamilyOptions()));
         column_families.push_back(ColumnFamilyDescriptor("run_info", ColumnFamilyOptions()));
 
-        Status s = DB::Open(DBOptions(), kDBPath, column_families, &_col_handles, &_db);
+        Status s = DB::Open(DBOptions(), dbfile, column_families, &_col_handles, &_db);
         assert(s.ok());
     }
 
