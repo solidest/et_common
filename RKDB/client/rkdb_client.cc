@@ -18,20 +18,20 @@ Napi::Value OpenRkdb(const Napi::CallbackInfo& info)
     if (info.Length() < 2)
     {
         Napi::TypeError::New(env, "Wrong number of arguments").ThrowAsJavaScriptException();
-        return env.Null();
+        return env.Undefined();
     }
 
     if (!info[0].IsString() || !info[1].IsNumber())
     {
         Napi::TypeError::New(env, "Wrong arguments").ThrowAsJavaScriptException();
-        return env.Null();
+        return env.Undefined();
     }
 
     auto ip = info[0].As<Napi::String>().Utf8Value();
     auto port = info[1].As<Napi::Number>().Int32Value();
     __c = new rpc::client(ip, port);
 
-    return env.Null();
+    return env.Undefined();
 }
 
 Napi::Value CloseRkdb(const Napi::CallbackInfo& info)
@@ -41,7 +41,7 @@ Napi::Value CloseRkdb(const Napi::CallbackInfo& info)
     {
         delete __c;
     }
-    return env.Null();
+    return env.Undefined();
 }
 
 // string GetProjectInfoList();
@@ -76,11 +76,13 @@ Napi::Value NewProjectInfo(const Napi::CallbackInfo& info)
         if (info.Length() < 1)
         {
             Napi::TypeError::New(env, "Wrong number of arguments").ThrowAsJavaScriptException();
+            return env.Null();
         }
 
         if (!info[0].IsString())
         {
             Napi::TypeError::New(env, "Wrong arguments").ThrowAsJavaScriptException();
+            return env.Null();
         }
         auto pjinfo = info[0].As<Napi::String>().Utf8Value();
         auto id = __c->call("NewProjectInfo", pjinfo).as<long long>();
@@ -109,13 +111,13 @@ Napi::Value DelProject(const Napi::CallbackInfo& info)
         if (info.Length() < 1)
         {
             Napi::TypeError::New(env, "Wrong number of arguments").ThrowAsJavaScriptException();
-            return env.Null();
+            return env.Undefined();
         }
 
         if (!info[0].IsNumber())
         {
             Napi::TypeError::New(env, "Wrong arguments").ThrowAsJavaScriptException();
-            return env.Null();
+            return env.Undefined();
         }
         auto id = info[0].As<Napi::Number>().Int64Value();
         __c->call("DelProject", id);
@@ -130,7 +132,7 @@ Napi::Value DelProject(const Napi::CallbackInfo& info)
         auto err = t.get_error().as<err_t>();
         Napi::TypeError::New(env, std::get<1>(err)).ThrowAsJavaScriptException();
     }
-    return env.Null();
+    return env.Undefined();
 }
 
 // void SetProjectInfo(long long pid, string const & value);
@@ -142,13 +144,13 @@ Napi::Value SetProjectInfo(const Napi::CallbackInfo& info)
         if (info.Length() < 2)
         {
             Napi::TypeError::New(env, "Wrong number of arguments").ThrowAsJavaScriptException();
-            return env.Null();
+            return env.Undefined();
         }
 
         if (!info[0].IsNumber() || !info[1].IsString())
         {
             Napi::TypeError::New(env, "Wrong arguments").ThrowAsJavaScriptException();
-            return env.Null();
+            return env.Undefined();
         }
         auto id = info[0].As<Napi::Number>().Int64Value();
         auto pinfo = info[1].As<Napi::String>().Utf8Value();
@@ -164,7 +166,7 @@ Napi::Value SetProjectInfo(const Napi::CallbackInfo& info)
         auto err = t.get_error().as<err_t>();
         Napi::TypeError::New(env, std::get<1>(err)).ThrowAsJavaScriptException();
     }
-    return env.Null();
+    return env.Undefined();
 }
 
 // void SetProject(long long pid, string const & vlaue);
@@ -176,13 +178,13 @@ Napi::Value SetProject(const Napi::CallbackInfo& info)
         if (info.Length() < 2)
         {
             Napi::TypeError::New(env, "Wrong number of arguments").ThrowAsJavaScriptException();
-            return env.Null();
+            return env.Undefined();
         }
 
         if (!info[0].IsNumber() || !info[1].IsString())
         {
             Napi::TypeError::New(env, "Wrong arguments").ThrowAsJavaScriptException();
-            return env.Null();
+            return env.Undefined();
         }
         auto id = info[0].As<Napi::Number>().Int64Value();
         auto pinfo = info[1].As<Napi::String>().Utf8Value();
@@ -198,7 +200,7 @@ Napi::Value SetProject(const Napi::CallbackInfo& info)
         auto err = t.get_error().as<err_t>();
         Napi::TypeError::New(env, std::get<1>(err)).ThrowAsJavaScriptException();
     }
-    return env.Null();
+    return env.Undefined();
 }
 
 // string GetProject(long long pid);
