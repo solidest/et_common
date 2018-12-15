@@ -36,17 +36,20 @@ int rklog_serv_stop()
     return 0;
 }
 
-RklogServer::RklogServer(void (*outhook)(ReaderWriterQueue<RkLogInfo>&)):_infos(100)
+RklogServer::RklogServer():_infos(100)
 {
-    _OutHook = outhook;
+
 }
 
 RklogServer::~RklogServer()
 {
-    if(_OutHook)
-    {
-        _OutHook(_infos);        
-    }
+
+}
+
+//hook out function
+void RklogServer::HookOut(void (*outhook)(ReaderWriterQueue<RkLogInfo>&))
+{
+    _OutHook = outhook;
 }
 
 //log out

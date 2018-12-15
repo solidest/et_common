@@ -28,8 +28,9 @@ typedef struct RkLogInfo
 class RklogServer
 {
 public:
-    RklogServer(void (*outhook)(ReaderWriterQueue<RkLogInfo>&));
+    RklogServer();
     ~RklogServer();
+    void HookOut(void (*outhook)(ReaderWriterQueue<RkLogInfo>&));
     void LogInfo(const string& info);
     void LogError(const string& info);
     void LogWarning(const string& info);

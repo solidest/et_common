@@ -38,7 +38,8 @@ INCS_Debug := \
 	-I/usr/include/nodejs/src \
 	-I/usr/include/nodejs/deps/uv/include \
 	-I/usr/include/nodejs/deps/v8/include \
-	-I$(srcdir)/../../include
+	-I$(srcdir)/../../include \
+	-I$(srcdir)/node_modules/_nan@2.11.1@nan
 
 DEFS_Release := \
 	'-DNODE_GYP_MODULE_NAME=rklog_server' \
@@ -73,7 +74,8 @@ INCS_Release := \
 	-I/usr/include/nodejs/src \
 	-I/usr/include/nodejs/deps/uv/include \
 	-I/usr/include/nodejs/deps/v8/include \
-	-I$(srcdir)/../../include
+	-I$(srcdir)/../../include \
+	-I$(srcdir)/node_modules/_nan@2.11.1@nan
 
 OBJS := \
 	$(obj).target/$(TARGET)/rklog_server_addon.o \

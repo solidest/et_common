@@ -3,7 +3,8 @@
     {
       "target_name": "rklog_server",
       "include_dirs": [
-        '../../include'
+        '../../include',
+        "<!(node -e \"require('nan')\")"
       ],
       "libraries": [
         '../../../bin/librpc.a'
