@@ -6,7 +6,6 @@
 rkLog::rkLog(const char* serverip, unsigned short serverport)
 {
     _c = new rpc::client(serverip, serverport);
-
 }
 
 rkLog::~rkLog()
