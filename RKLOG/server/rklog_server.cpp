@@ -4,42 +4,88 @@
 #include "rpc/server.h"
 #include "rklog_server.h"
 
+
+static rpc::server* psrv;
+
 //start log server
-// int rklog_serv_start(const char* serverip, unsigned short serverport)
-// {
-//     rpc::server srv(serverip, serverport); // listen on TCP port
-    
-//     //LogContext g_log_context;
-//     //if(logfile != NULL) log_set_filename(logfile);
-
-//     //log_init();
-   
-//     srv.bind("rklog", &rklog);
-//     constexpr size_t thread_count = 3;
-
-//     srv.async_run(); // non-blocking call, handlers execute on one of the workers
-
-//     std::cin.ignore();
-//     return 0;
-// }
-
-// void rklog(std::string itype, std::string info)
-// {
-//     RkLogInfo * plogi = new RkLogInfo;
-//     plogi->info = info;
-//     plogi->itype = itype;
-//     __infos.try_enqueue(plogi);
-    
-// } 
-
-RklogServer::RklogServer():_infos(100)
+int rklog_serv_start(RklogServer& log, const char* serverip, unsigned short serverport)
 {
+    psrv = new rpc::server(serverip, serverport);
+    
+    psrv->bind("LogInfo", [&log](string const & info) { log.LogInfo(info); });
+    psrv->bind("LogError", [&log](string const & info) { log.LogError(info); });
+    psrv->bind("LogWarning", [&log](string const & info) { log.LogWarning(info); });
+    psrv->bind("LogDebug", [&log](string const & info) { log.LogDebug(info); });
 
+    psrv->async_run();
+
+    return 0;
 }
 
-void RklogServer::Log(const RkLogInfo & loginfo)
+//stop log server
+int rklog_serv_stop()
 {
-    _infos.try_enqueue(loginfo);
+    if(psrv)
+    {
+        psrv->close_sessions();
+        psrv->stop();
+        delete psrv;
+        psrv = nullptr;
+    }
+
+    return 0;
+}
+
+RklogServer::RklogServer(void (*outhook)(ReaderWriterQueue<RkLogInfo>&)):_infos(100)
+{
+    _OutHook = outhook;
+}
+
+RklogServer::~RklogServer()
+{
+    if(_OutHook)
+    {
+        _OutHook(_infos);        
+    }
+}
+
+//log out
+void RklogServer::Log(const string & itype, const string & info)
+{
+    RkLogInfo loginfo = 
+    {
+        .itype = itype,
+        .info = info,
+    };
+
+    if(_OutHook)
+    {
+        _infos.try_enqueue(loginfo);
+        _OutHook(_infos);        
+    }
+    else
+        std::cout<<loginfo.itype<<">"<<" "<<loginfo.info<<std::endl;
+}
+
+
+void RklogServer::LogInfo(const string& info)
+{
+    Log(RKLOG_INFO_KEY, info);
+}
+
+void RklogServer::LogError(const string& info)
+{
+    Log(RKLOG_ERROR_KEY, info);
+}
+
+void RklogServer::LogWarning(const string& info)
+{
+    Log(RKLOG_WARNING_KEY, info);
+}
+
+void RklogServer::LogDebug(const string& info)
+{
+    Log(RKLOG_DEBUG_KEY, info);
 }
 
 

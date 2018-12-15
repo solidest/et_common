@@ -3,7 +3,7 @@
 #include <iostream>
 #include <string.h>
 
-#include "RKLOG/server/rklog_server.h"
+//#include "RKLOG/server/rklog_server.h"
 #include "RKLOG/client/rklog_client.h"
 #include "RKDB/server/rkdb_server.h"
 
@@ -18,18 +18,20 @@
 using namespace std;
 using namespace rapidjson;
 
-int start_logclient()
-{
-    rkLog rlog("192.168.136.138", 5000);
-    for(int i=0; i<1000; i++)
-    {
-        rlog.log("test");        
-    }
-}
+
 
 int test_logserver()
 {
-    rklog_serv_start("192.168.136.138", 5000); 
+    // RklogServer logsrv(NULL);
+    // logsrv.LogInfo("log info test!");
+    // logsrv.LogError("log error test!");
+
+}
+
+int test_logclient()
+{
+    RklogClient c("127.0.0.1", 5000);
+    c.log("test log");
 }
 
 
@@ -94,7 +96,7 @@ int test_start_dbserver()
     // pthread_t pth;
     // int ret = pthread_create(&pth, NULL, _start_dbserver, NULL);
 
-    RkdbServer db(1024, "/home/solidest/et/db_data");
+    RkdbServer db(1024, "/home/byx/et/db_data");
     rkdb_serv_start(db, "127.0.0.1", 8000);
 
     usleep(100000);
@@ -152,7 +154,9 @@ int main(int argc, const char * argv[]) {
     
     int ret = 0;
     cout<<endl<<"<<<<<<<<<<<<<<<<<<<  begin test  >>>>>>>>>>>>>>>>>>>"<<endl<<endl;
-    test_start_dbserver();
+    //test_start_dbserver();
+    //test_logserver();
+    test_logclient();
 
     //test_dbserver();
     //start_logclient();  

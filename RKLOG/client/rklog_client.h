@@ -14,14 +14,14 @@
 #include <string>
 #include "rpc/client.h"
 
-class rkLog
+class RklogClient
 {
     private:
         rpc::client* _c;
 
     public:
-        ~rkLog();
-        rkLog(const char* serverip, unsigned short serverport);
+        ~RklogClient();
+        RklogClient(const char* serverip, unsigned short serverport);
         int log(std::string info);   
 };
 

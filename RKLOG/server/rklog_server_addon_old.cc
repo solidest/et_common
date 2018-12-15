@@ -28,8 +28,7 @@ void OnLogOut(uv_async_t* handle)
             vector<napi_value> args;
             args.push_back(Napi::String::New(__scope->Env(), info.itype));
             args.push_back(Napi::String::New(__scope->Env(), info.info));
-            //__outcb->MakeCallback()
-            //__outcb->Call(args);
+            __outcb->Call(args);
             //cout<<info.info<<endl;
         }
     }

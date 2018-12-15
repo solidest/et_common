@@ -28,14 +28,20 @@ typedef struct RkLogInfo
 class RklogServer
 {
 public:
-    RklogServer();
+    RklogServer(void (*outhook)(ReaderWriterQueue<RkLogInfo>&));
+    ~RklogServer();
+    void LogInfo(const string& info);
+    void LogError(const string& info);
+    void LogWarning(const string& info);
+    void LogDebug(const string& info);
 
 private:
-    void Log(const RkLogInfo & loginfo);    
+    void (*_OutHook)(ReaderWriterQueue<RkLogInfo>&);
+    void Log(const string & itype, const string & info);    
     ReaderWriterQueue<RkLogInfo> _infos;
 };
 
-int rklog_serv_start(RklogServer& logsrv, const char* serverip, unsigned short serverport);
-
+int rklog_serv_start(RklogServer& log, const char* serverip, unsigned short serverport);
+int rklog_serv_stop();
 
 #endif /* !RKLOG_H_ */

@@ -1,0 +1,1 @@
+cmd_Release/rklog_server.node := ln -f "Release/obj.target/rklog_server.node" "Release/rklog_server.node" 2>/dev/null || (rm -rf "Release/rklog_server.node" && cp -af "Release/obj.target/rklog_server.node" "Release/rklog_server.node")
