@@ -82,6 +82,7 @@ void Init(v8::Local<v8::Object> exports)
     exports->Set(Nan::New("StopLogServer").ToLocalChecked(), Nan::New<v8::FunctionTemplate>(StopLogServer)->GetFunction());
 }
 
+
 NODE_MODULE(rklog_server, Init)
 
 
