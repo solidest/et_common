@@ -1,1 +1,0 @@
-cmd_Release/obj.target/rklog_server.node := g++ -shared -pthread -rdynamic -m64  -Wl,-soname=rklog_server.node -o Release/obj.target/rklog_server.node -Wl,--start-group Release/obj.target/rklog_server/rklog_server_addon.o Release/obj.target/rklog_server/rklog_server.o -Wl,--end-group ../../../bin/librpc.a

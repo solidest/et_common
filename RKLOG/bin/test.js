@@ -1,10 +1,10 @@
 
 var count = 0;
-var out = function showProjectInfo(itype, info)
+var out = function showProjectInfo(itype, source, info)
 {
-    console.log(itype + "> " + info);
+    console.log(source + ":" + itype + "> " + info);
     count += 1;
-    if(count>3)
+    if(count>7)
     addon.StopLogServer();
 }
 

@@ -16,13 +16,19 @@
 
 class RklogClient
 {
-    private:
-        rpc::client* _c;
-
     public:
         ~RklogClient();
-        RklogClient(const char* serverip, unsigned short serverport);
-        int log(std::string info);   
+        RklogClient(const char* clientname, const char* serverip, unsigned short serverport);
+
+        void LogInfo(const std::string& info);
+        void LogError(const std::string& info);
+        void LogWarning(const std::string& info);
+        void LogDebug(const std::string& info);
+
+    private:
+        rpc::client* _c;
+        std::string _name;
+        inline void log(const std::string& itype, const std::string& info);   
 };
 
 

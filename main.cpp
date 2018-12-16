@@ -19,19 +19,13 @@ using namespace std;
 using namespace rapidjson;
 
 
-
-int test_logserver()
-{
-    // RklogServer logsrv(NULL);
-    // logsrv.LogInfo("log info test!");
-    // logsrv.LogError("log error test!");
-
-}
-
 int test_logclient()
 {
-    RklogClient c("127.0.0.1", 5000);
-    c.log("test log");
+    RklogClient c("tester", "127.0.0.1", 5000);
+    c.LogError("test error");
+    c.LogDebug("test debug");
+    c.LogWarning("test warning");
+    c.LogInfo("test info");
 }
 
 
@@ -84,11 +78,6 @@ int test_dbserver()
     db.DelProject(id);
 }
 
-// void* _start_dbserver(void* args)
-// {
-//     RkdbServer db(1024, NULL);
-//     rkdb_serv_start(db, "192.168.136.138", 8000);
-// }
 
 int test_start_dbserver()
 {
@@ -154,18 +143,9 @@ int main(int argc, const char * argv[]) {
     
     int ret = 0;
     cout<<endl<<"<<<<<<<<<<<<<<<<<<<  begin test  >>>>>>>>>>>>>>>>>>>"<<endl<<endl;
-    //test_start_dbserver();
+    test_start_dbserver();
     //test_logserver();
-    test_logclient();
-
-    //test_dbserver();
-    //start_logclient();  
-    //ret = test_logserver();
-
-    //start_logclient();
-    //ret = test_rkcp_client();
-    //ret = test_rkcp_server();
-    //ret = test_dbserver();
+    //test_logclient();
     cout<<endl<<"<<<<<<<<<<<<<<<<<<<  end   test  >>>>>>>>>>>>>>>>>>>"<<endl<<endl;
     return ret;
 }

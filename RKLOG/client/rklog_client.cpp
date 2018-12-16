@@ -3,29 +3,49 @@
 #include "rklog_client.h"
 #include "rpc/rpc_error.h"
 
-RklogClient::RklogClient(const char* serverip, unsigned short serverport)
+RklogClient::RklogClient(const char* clientname, const char* serverip, unsigned short serverport)
 {
+    _name = clientname;
     _c = new rpc::client(serverip, serverport);
+    _c->set_timeout(1000);
 }
 
 RklogClient::~RklogClient()
 {
     if(_c)
+    {
         delete(_c);
+        _c = nullptr;      
+    }
 }
 
-int RklogClient::log(std::string info)
+inline void RklogClient::log(const std::string& itype, const std::string& info)
 {
-    try {
-        // default timeout is 5000 milliseconds
-        const uint64_t short_timeout = 1000;
-        _c->set_timeout(short_timeout);
-        _c->call("LogInfo", info);
-    } catch (rpc::timeout &t) {
-        // will display a message like
-        // rpc::timeout: Timeout of 50ms while calling RPC function 'sleep'
-        std::cout << t.what() << std::endl;
+    try 
+    {
+        _c->call(itype, _name, info);
+    } 
+    catch (rpc::timeout &t)
+    {
+        std::cerr << t.what() << std::endl;
+        std::cout << itype << "> " << info << std::endl;
     }
+}
 
-    return 0;
+void RklogClient::LogInfo(const std::string& info)
+{
+    log("LogInfo", info);
+}
+
+void RklogClient::LogError(const std::string& info)
+{
+    log("LogError", info);
+}
+void RklogClient::LogWarning(const std::string& info)
+{
+    log("LogWarning", info);
+}
+void RklogClient::LogDebug(const std::string& info)
+{
+    log("LogDebug", info);
 }
